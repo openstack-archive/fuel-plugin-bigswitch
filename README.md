@@ -38,35 +38,39 @@ Installation Guide
 BigSwitch plugin installation
 ----------------------------------------
 
-1. Clone the fuel-plugin-bigswitch repo from github:
+1. Download Switch Light virtual package from Big Switch Networks for
+   the deployed operating system. The downloaded package must be 
+   saved on the Fuel master node under directory, "/tmp/repositories"
+
+2. Clone the fuel-plugin-bigswitch repo from github:
 
         git clone https://github.com/openstack/fuel-plugin-bigswitch
 
-2. Install the Fuel Plugin Builder:
+3. Install the Fuel Plugin Builder:
 
         pip install fuel-plugin-builder
 
-3. Build Openvswitch Fuel plugin:
+4. Build Openvswitch Fuel plugin:
 
         fpb --build fuel-plugin-bigswitch/
 
-4. The *fuel-plugin-bigswitch-[x.x.x].rpm* plugin package will be created in the plugin folder.
+5. The *fuel-plugin-bigswitch-[x.x.x].rpm* plugin package will be created in the plugin folder.
 
-5. Move this file to the Fuel Master node with secure copy (scp):
+6. Move this file to the Fuel Master node with secure copy (scp):
 
         scp fuel-plugin-bigswitch-[x.x.x].rpm root@<the_Fuel_Master_node_IP address>:/tmp
 
-6. While logged in Fuel Master install the BigSwitch plugin:
+7. While logged in Fuel Master install the BigSwitch plugin:
 
         fuel plugins --install fuel-plugin-bigswitch-[x.x.x].rpm
 
-7. Check if the plugin was installed successfully:
+8. Check if the plugin was installed successfully:
 
         fuel plugins
 
         id | name                  | version | package_version
         ---|-----------------------|---------|----------------
-        1  | fuel-plugin-bigswitch | 1.0.0   | 1.0.0
+        1  | fuel-plugin-bigswitch | 1.0.0   | 3.0.0
 
 8. Plugin is ready to use and can be enabled on the Settings tab of the Fuel web UI.
 
@@ -86,17 +90,6 @@ Build options
 -------------
 
 It is possible to modify process of building plugin by setting environment variables. Look into [pre_build_hook file](pre_build_hook) for more details.
-
-Dependencies
-------------
-
-If you plan to use plugin in environment without internet access, modify build command:
-
-     INCLUDE_DEPENDENCIES=true fpb --build fuel-plugin-bigswitch/
-
-Pre build script will try download required dependencies so it become part of the compiled plugin.
-
-Note: List of packages for [ubuntu](bigswitch_package/ubuntu/dependencies.txt) and [centos](bigswitch_package/centos/dependencies.txt) may need to be modified if packages in centos or ubuntu repositories will change.
 
 Testing
 -------

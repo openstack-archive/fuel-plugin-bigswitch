@@ -12,9 +12,9 @@ attributes:
     label: "BCF Fabric Mode"
     description: "Big Cloud Fabric can be deployed in either physical-only or physical+virtual Modes."
     values:
-      - data: "p-only"
+      - data: "P-Only"
         label: "P-Only"
-      - data: "p+v"
+      - data: "P+V"
         label: "P+V"
 
   bcf_controller_1:
@@ -55,12 +55,12 @@ attributes:
     value: ""
     label: "Openstack Instance ID"
     description: "The Openstack instance ID that is unique within the BCF fabric"
-    weight: 40
+    weight: 30
     type: "text"
 
   bcf_controller_os_mgmt:
     value: ""
     label: "Openstack Management Tenant Name"
     description: "The tenant that defines Openstack management segments"
-    weight: 30
+    weight: 40
     type: "text"
