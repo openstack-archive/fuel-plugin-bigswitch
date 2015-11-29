@@ -1,0 +1,12 @@
+*.rpm
+*.log
+*.mo
+*.sw?
+*~
+/.*
+!/.coveragerc
+!/.gitignore
+!/.gitreview
+!/.mailmap
+!/.pylintrc
+!/.testr.conf
