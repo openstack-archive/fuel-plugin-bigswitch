@@ -21,25 +21,24 @@ class bcf::compute {
     $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
  
     $ifcfg_bond0 = "/etc/network/interfaces.d/ifcfg-bond0"
-    $bond_lacp = "bond-mode 4"
     $sys_desc_lacp = "5c:16:c7:00:00:04"
     $sys_desc_xor = "5c:16:c7:00:00:00"
     if $bcf::bond {
         # ensure bond-mode is 802.3ad 
-        exec { "ensure $bond_lacp in $ifcfg_bond0":
-            command => "echo '$bond_lacp' >> $ifcfg_bond0",
-            unless => "grep -qe '$bond_lacp' -- $ifcfg_bond0",
+        exec { "ensure ${bcf::bond_lacp} in $ifcfg_bond0":
+            command => "echo '${bcf::bond_lacp}' >> $ifcfg_bond0",
+            unless => "grep -qe '${bcf::bond_lacp}' -- $ifcfg_bond0",
             path => "/bin:/usr/bin",
             require => Exec["update bond-mode in $ifcfg_bond0"],
         }
         exec { "update bond-mode in $ifcfg_bond0":
-            command => "sed -i 's/bond-mode.*/$bond_lacp/' $ifcfg_bond0",
+            command => "sed -i 's/bond-mode.*/${bcf::bond_lacp}/' $ifcfg_bond0",
             path => "/bin:/usr/bin"
         }
-        $sys_desc = $sys_desc_lacp
+        $sys_desc = $bcf::sys_desc_lacp
     }
     else {
-        $sys_desc = $sys_desc_xor
+        $sys_desc = $bcf::sys_desc_xor
     }
 
     # lldp

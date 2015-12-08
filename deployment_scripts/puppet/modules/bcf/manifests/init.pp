@@ -14,12 +14,16 @@
 #    under the License.
 #
 class bcf {
+
+$bond_lacp = "bond-mode 4"
+$sys_desc_lacp = "5c:16:c7:00:00:04"
+$sys_desc_xor = "5c:16:c7:00:00:00"
+
 # Network configuration
 $network_scheme = hiera_hash('network_scheme', {})
 prepare_network_config($network_scheme)
 $gw = get_default_gateways()
-#$phy_devs = get_network_role_property('neutron/private', 'phys_dev')
-$phy_devs = "eth0"
+$phy_devs = get_network_role_property('neutron/private', 'phys_dev')
 $if_str = "$phy_devs"
 if $if_str =~ /^bond.*/ {
     $ifaces = join($phy_devs, ",")
