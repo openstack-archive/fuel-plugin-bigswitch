@@ -15,15 +15,43 @@
 #
 class bcf::compute {
 
+    include bcf
     include bcf::params
     # all of the exec statements use this path
     $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
-    
-    # lldp
-    file { "/bin/send_lldp":
-        ensure  => file,
-        mode    => 0777,
+ 
+    $ifcfg_bond0 = "/etc/network/interfaces.d/ifcfg-bond0"
+    $bond_lacp = "bond-mode 4"
+    $sys_desc_lacp = "5c:16:c7:00:00:04"
+    $sys_desc_xor = "5c:16:c7:00:00:00"
+    if $bcf::bond {
+        # ensure bond-mode is 802.3ad 
+        exec { "ensure $bond_lacp in $ifcfg_bond0":
+            command => "echo '$bond_lacp' >> $ifcfg_bond0",
+            unless => "grep -qe '$bond_lacp' -- $ifcfg_bond0",
+            path => "/bin:/usr/bin",
+            require => Exec["update bond-mode in $ifcfg_bond0"],
+        }
+        exec { "update bond-mode in $ifcfg_bond0":
+            command => "sed -i 's/bond-mode.*/$bond_lacp/' $ifcfg_bond0",
+            path => "/bin:/usr/bin"
+        }
+        $sys_desc = $sys_desc_lacp
     }
+    else {
+        $sys_desc = $sys_desc_xor
+    }
+
+    # lldp
+    $a = file('/etc/fuel/plugins/fuel-plugin-bigswitch-1.0/python_scripts/send_lldp','/dev/null')
+    if($a != '') {
+        file { "/bin/send_lldp":
+            content => $a,
+            ensure  => file,
+            mode    => 0777,
+        }
+    }
+
     file { "/etc/init/send_lldp.conf":
         ensure  => file,
         content => "
@@ -32,7 +60,7 @@ start on runlevel [2345]
 stop on runlevel [!2345]
 respawn
 script
-    exec /bin/send_lldp --system-desc 5c:16:c7:00:00:04 --system-name $(uname -n) -i 10 --network_interface eth2,eth3 
+    exec /bin/send_lldp --system-desc $sys_desc --system-name $(uname -n) -i 10 --network_interface $bcf::itfs
 end script
 ",
     }
@@ -47,7 +75,29 @@ end script
         ensure  => file,
         mode    => 0777,
     }->
-    
+    file_line { "remove clear default gw":
+        path    => '/etc/rc.local',
+        ensure  => absent,
+        line    => "ip route del default",
+    }->
+    file_line { "remove ip route add default":
+        path    => '/etc/rc.local',
+        ensure  => absent,
+        line    => "ip route add default via ${bcf::gw}",
+    }->
+    file_line { "clear default gw":
+        path    => '/etc/rc.local',
+        line    => "ip route del default",
+    }->
+    file_line { "add default gw":
+        path    => '/etc/rc.local',
+        line    => "ip route add default via ${bcf::gw}",
+    }->
+    file_line { "add exit 0":
+        path    => '/etc/rc.local',
+        line    => "exit 0",
+    }
+
     # config /etc/neutron/neutron.conf
     ini_setting { "neutron.conf report_interval":
       ensure            => present,
@@ -134,7 +184,7 @@ end script
       section           => 'restproxy',
       key_val_separator => '=',
       setting           => 'servers',
-      value             => '${bcf::params::openstack::bcf_controller_1},${bcf::params::openstack::bcf_controller_2}',
+      value             => "${bcf::params::openstack::bcf_controller_1},${bcf::params::openstack::bcf_controller_2}",
       notify            => Service['neutron-plugin-openvswitch-agent'],
     }
     ini_setting { "ml2 restproxy server auth":
@@ -143,7 +193,7 @@ end script
       section           => 'restproxy',
       key_val_separator => '=',
       setting           => 'server_auth',
-      value             => '${bcf::params::openstack::bcf_username}:${bcf::params::openstack::bcf_password}',
+      value             => "${bcf::params::openstack::bcf_username}:${bcf::params::openstack::bcf_password}",
       notify            => Service['neutron-plugin-openvswitch-agent'],
     }
     ini_setting { "ml2 restproxy server ssl":
@@ -179,7 +229,7 @@ end script
       section           => 'restproxy',
       key_val_separator => '=',
       setting           => 'neutron_id',
-      value             => '${bcf::params::openstack::bcf_instance_id}',
+      value             => "${bcf::params::openstack::bcf_instance_id}",
       notify            => Service['neutron-plugin-openvswitch-agent'],
     }
     
@@ -189,12 +239,6 @@ end script
       group   => neutron,
       recurse => true,
       notify  => Service['neutron-plugin-openvswitch-agent'],
-    }
-    
-    # make sure neutron-bsn-agent is stopped
-    service {'neutron-bsn-agent':
-      ensure  => stopped,
-      enable  => false,
     }
     
     # ensure neutron-plugin-openvswitch-agent is running

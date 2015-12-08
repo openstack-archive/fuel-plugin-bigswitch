@@ -31,7 +31,7 @@ class bcf::controller {
         path    => $binpath,
         notify  => Service['neutron-server'],
     }
-    
+
     # config /etc/neutron/neutron.conf
     ini_setting { "neutron.conf report_interval":
       ensure            => present,
@@ -173,7 +173,7 @@ class bcf::controller {
       section           => 'restproxy',
       key_val_separator => '=',
       setting           => 'servers',
-      value             => '${bcf::params::openstack::bcf_controller_1},${bcf::params::openstack::bcf_controller_2}',
+      value             => "${bcf::params::openstack::bcf_controller_1},${bcf::params::openstack::bcf_controller_2}",
       notify            => Service['neutron-server'],
     }
     ini_setting { "ml2 restproxy server auth":
@@ -182,7 +182,7 @@ class bcf::controller {
       section           => 'restproxy',
       key_val_separator => '=',
       setting           => 'server_auth',
-      value             => '${bcf::params::openstack::bcf_username}:${bcf::params::openstack::bcf_password}',
+      value             => "${bcf::params::openstack::bcf_username}:${bcf::params::openstack::bcf_password}",
       notify            => Service['neutron-server'],
     }
     ini_setting { "ml2 restproxy server ssl":
@@ -218,7 +218,43 @@ class bcf::controller {
       section           => 'restproxy',
       key_val_separator => '=',
       setting           => 'neutron_id',
-      value             => '${bcf::params::openstack::bcf_instance_id}',
+      value             => "${bcf::params::openstack::bcf_instance_id}",
+      notify            => Service['neutron-server'],
+    }
+    ini_setting { "ml2 restproxy auth_url":
+      ensure            => present,
+      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+      section           => 'restproxy',
+      key_val_separator => '=',
+      setting           => 'auth_url',
+      value             => "${bcf::params::openstack::keystone_vip}:35357",
+      notify            => Service['neutron-server'],
+    }
+    ini_setting { "ml2 restproxy auth_user":
+      ensure            => present,
+      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+      section           => 'restproxy',
+      key_val_separator => '=',
+      setting           => 'auth_user',
+      value             => "${bcf::params::openstack::auth_user}",
+      notify            => Service['neutron-server'],
+    }
+    ini_setting { "ml2 restproxy auth_password":
+      ensure            => present,
+      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+      section           => 'restproxy',
+      key_val_separator => '=',
+      setting           => 'auth_password',
+      value             => "${bcf::params::openstack::auth_password}",
+      notify            => Service['neutron-server'],
+    }
+    ini_setting { "ml2 restproxy auth_tenant_name":
+      ensure            => present,
+      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+      section           => 'restproxy',
+      key_val_separator => '=',
+      setting           => 'auth_tenant',
+      value             => "${bcf::params::openstack::auth_tenant_name}",
       notify            => Service['neutron-server'],
     }
     

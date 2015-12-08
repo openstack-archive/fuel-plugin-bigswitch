@@ -17,10 +17,6 @@ class bcf::params {
 
   include bcf::params::openstack
 
-  $bcf_hash = hiera('bigswitch')
-  $network_metadata = hiera('network_metadata')
-  $ssl = hiera('public_ssl')
-
   case $::operatingsystem {
     'Ubuntu', 'Debian': {
     }
@@ -29,8 +25,4 @@ class bcf::params {
     default: {
     }
   }
-
-  #server parameters
-  $server_ip                         = $network_metadata['vips'][$vip_name]['ipaddr']
-  $mgmt_vip                          = $network_metadata['vips']['management']['ipaddr']
 }

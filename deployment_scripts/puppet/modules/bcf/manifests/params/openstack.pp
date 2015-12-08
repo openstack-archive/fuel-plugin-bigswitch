@@ -18,14 +18,15 @@ class bcf::params::openstack {
   $virtual_cluster_name  = 'OpenStackCluster'
   $ceph_virtual_cluster_name  = 'CephCluster'
 
+  $quantum_settings      = hiera('quantum_settings')
   $keystone_vip          = hiera('management_vip')
-  $db_vip                = hiera('management_vip')
-  $nova_vip              = hiera('management_vip')
-  $glance_vip            = hiera('management_vip')
-  $cinder_vip            = hiera('management_vip')
-  $rabbit_vip            = hiera('management_vip')
-  $bcf_hash              = hiera('bigswitch')
+  $auth_user             = 'neutron'
+  $auth_password         = $quantum_settings['keystone']['admin_password']
+  $auth_tenant_name      = 'services'
 
+  $network_scheme        = hiera('network_scheme')
+  $fuel_master           = hiera('master_ip')
+  $bcf_hash              = hiera('fuel-plugin-bigswitch')
 
   $access_hash           = hiera('access')
   $keystone_hash         = hiera('keystone')
@@ -42,16 +43,4 @@ class bcf::params::openstack {
   $bcf_instance_id       = $bcf_hash['openstack_instance_id']
   $bcf_controller_mgmt   = $bcf_hash['bcf_controller_os_mgmt']
   $access_tenant         = 'services'
-  $keystone_db_password  = $keystone_hash['db_password']
-  $nova_db_password      = $nova_hash['db_password']
-  $neutron_db_password   = $neutron_hash['database']['passwd']
-  $cinder_db_password    = $cinder_hash['db_password']
-  $rabbit_password       = $rabbit_hash['password']
-  $rabbitmq_service_name = 'rabbitmq-server'
-
-  if !$rabbit_hash['user'] {
-    $rabbit_user         = 'nova'
-  } else {
-    $rabbit_user         = $rabbit_hash['user']
-  }
 }

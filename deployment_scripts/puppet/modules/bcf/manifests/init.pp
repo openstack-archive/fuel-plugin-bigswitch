@@ -13,4 +13,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-class bcf {}
+class bcf {
+# Network configuration
+$network_scheme = hiera_hash('network_scheme', {})
+prepare_network_config($network_scheme)
+$gw = get_default_gateways()
+#$phy_devs = get_network_role_property('neutron/private', 'phys_dev')
+$phy_devs = "eth0"
+$if_str = "$phy_devs"
+if $if_str =~ /^bond.*/ {
+    $ifaces = join($phy_devs, ",")
+    $bond = true
+    $s = "${phy_devs[0]},"
+    $r = split("abc$ifaces", $s)
+    $itfs = $r[1]
+}
+else {
+    $bond = false
+    $itfs = $phy_devs
+}
+
+notify { "ifaces: $ifaces": }
+notify { "bond: $bond": }
+notify { "gw: $gw": }
+notify { "itfs: $itfs": }
+}
