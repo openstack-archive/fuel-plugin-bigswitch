@@ -18,13 +18,22 @@ class bcf::controller {
     include bcf::params
     $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 
+    package { 'python-pip':
+        ensure => 'installed',
+    }
+    exec { 'bsnstacklib':
+        command => 'pip install "bsnstacklib<2015.2"',
+        path    => "/usr/local/bin/:/usr/bin/:/bin",
+        require => Package['python-pip']
+    }
+
     # load bonding module
     file_line {'load bonding on boot':
         path    => '/etc/modules',
         line    => 'bonding',
         match   => '^bonding$',
     }
-    
+
     # purge bcf controller public key
     exec { 'purge bcf key':
         command => "rm -rf /etc/neutron/plugins/ml2/host_certs/*",
@@ -76,7 +85,7 @@ class bcf::controller {
       value             => 'messaging',
       notify            => Service['neutron-server'],
     }
-    
+
     # configure /etc/keystone/keystone.conf
     ini_setting { "keystone.conf notification driver":
       ensure            => present,
@@ -87,7 +96,7 @@ class bcf::controller {
       value             => 'messaging',
       notify            => Service['keystone'],
     }
-    
+
     # config /etc/neutron/plugin.ini
     ini_setting { "neutron plugin.ini firewall_driver":
       ensure            => present,
@@ -111,7 +120,7 @@ class bcf::controller {
       ensure            => file,
       content           => 'dhcp-option-force=26,1400',
     }
-    
+
     # config /etc/neutron/l3-agent.ini
     ini_setting { "l3 agent disable metadata proxy":
       ensure            => present,
@@ -129,8 +138,8 @@ class bcf::controller {
       setting           => 'external_network_bridge',
       value             => '',
     }
-    
-    # config /etc/neutron/plugins/ml2/ml2_conf.ini 
+
+    # config /etc/neutron/plugins/ml2/ml2_conf.ini
     ini_setting { "ml2 type dirvers":
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
@@ -167,13 +176,20 @@ class bcf::controller {
       value             => '/etc/neutron/plugins/ml2',
       notify            => Service['neutron-server'],
     }
+    if $bcf::params::openstack::bcf_controller_2 == "" {
+        $server = $bcf::params::openstack::bcf_controller_1
+    }
+    else {
+        $server = "${bcf::params::openstack::bcf_controller_1},${bcf::params::openstack::bcf_controller_2}"
+    }
+
     ini_setting { "ml2 restproxy servers":
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
       key_val_separator => '=',
       setting           => 'servers',
-      value             => "${bcf::params::openstack::bcf_controller_1},${bcf::params::openstack::bcf_controller_2}",
+      value             => $server,
       notify            => Service['neutron-server'],
     }
     ini_setting { "ml2 restproxy server auth":
@@ -227,7 +243,7 @@ class bcf::controller {
       section           => 'restproxy',
       key_val_separator => '=',
       setting           => 'auth_url',
-      value             => "${bcf::params::openstack::keystone_vip}:35357",
+      value             => "http://${bcf::params::openstack::keystone_vip}:35357",
       notify            => Service['neutron-server'],
     }
     ini_setting { "ml2 restproxy auth_user":
@@ -257,7 +273,7 @@ class bcf::controller {
       value             => "${bcf::params::openstack::auth_tenant_name}",
       notify            => Service['neutron-server'],
     }
-    
+
     # change ml2 ownership
     file { '/etc/neutron/plugins/ml2':
       owner   => neutron,
@@ -265,7 +281,7 @@ class bcf::controller {
       recurse => true,
       notify  => Service['neutron-server'],
     }
-    
+
     # heat-engine, neutron-server, neutron-dhcp-agent and neutron-metadata-agent
     service { 'heat-engine':
       ensure  => running,
@@ -284,10 +300,6 @@ class bcf::controller {
       enable  => false,
     }
     service { 'neutron-metadata-agent':
-      ensure  => stopped,
-      enable  => false,
-    }
-    service {'neutron-bsn-agent':
       ensure  => stopped,
       enable  => false,
     }
