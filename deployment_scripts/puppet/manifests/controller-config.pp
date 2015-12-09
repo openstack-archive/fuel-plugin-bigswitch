@@ -14,4 +14,10 @@
 #    under the License.
 #
 notice("MODULAR:  bigswitch controller-config")
-include bcf::controller
+include bcf::params
+if $bcf::params::openstack::bcf_mode == 'P-Only' {
+    include bcf::p_only::controller
+}
+else {
+    include bcf::p_v::controller
+}
