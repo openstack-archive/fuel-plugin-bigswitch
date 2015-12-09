@@ -14,4 +14,10 @@
 #    under the License.
 #
 notice('MODULAR: bigswitch compute-config')
-include bcf::compute
+include bcf::params
+if $bcf::params::openstack::bcf_mode == 'P-Only' {
+    include bcf::p_only::compute
+}
+else {
+    include bcf::p_v::compute
+}

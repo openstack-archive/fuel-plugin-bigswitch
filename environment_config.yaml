@@ -20,7 +20,7 @@ attributes:
   bcf_controller_1:
     value: ""
     label: "BCF Controller1"
-    description: "BCF Controller' IP address and ports: <ip>:<port>"
+    description: "BCF Controller' IP address and ports: <ip>:8000"
     weight: 10
     type: "text"
     regex:
