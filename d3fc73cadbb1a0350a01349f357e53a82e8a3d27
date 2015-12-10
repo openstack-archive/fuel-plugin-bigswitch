@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Code-Review+2: Kanzhe Jiang <kanzhe@gmail.com>
+Workflow+1: Kanzhe Jiang <kanzhe@gmail.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 10 Dec 2015 10:09:04 +0000
+Reviewed-on: https://review.openstack.org/255660
+Project: openstack/fuel-plugin-bigswitch
+Branch: refs/heads/master
