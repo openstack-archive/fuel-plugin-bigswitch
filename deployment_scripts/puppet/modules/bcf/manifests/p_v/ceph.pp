@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-class bcf::ceph {
+class bcf::p_v::ceph {
 
     include bcf
     include bcf::params

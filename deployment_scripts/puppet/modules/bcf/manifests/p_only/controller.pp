@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-class bcf::controller {
+class bcf::p_only::controller {
 
     include bcf
     include bcf::params
