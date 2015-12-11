@@ -300,4 +300,20 @@ end script
         setting           => 'dhcp_delete_namespaces',
         value             => 'False',
     }
+
+    service { 'nova-compute':
+        ensure  => running,
+        enable  => true,
+    }
+
+    # update nova.conf for novncproxy_base_url
+    ini_setting { "nova novncproxy_base_url":
+        ensure            => present,
+        path              => '/etc/nova/nova.conf',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'novncproxy_base_url',
+        value             => "${bcf::public_vip}:6080/vnc_auto.html",
+        notify            => Service['nova-compute']
+    }
 }    

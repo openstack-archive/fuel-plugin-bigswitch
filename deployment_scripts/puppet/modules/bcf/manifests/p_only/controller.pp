@@ -99,6 +99,7 @@ end script
       key_val_separator => '=',
       setting           => 'report_interval',
       value             => '60',
+      notify            => Service['neutron-server', 'neutron-plugin-openvswitch-agent', 'neutron-l3-agent', 'neutron-dhcp-agent'],
     }
     ini_setting { "neutron.conf agent_down_time":
       ensure            => present,
@@ -107,6 +108,7 @@ end script
       key_val_separator => '=',
       setting           => 'agent_down_time',
       value             => '150',
+      notify            => Service['neutron-server', 'neutron-plugin-openvswitch-agent', 'neutron-l3-agent', 'neutron-dhcp-agent'],
     }
     ini_setting { "neutron.conf service_plugins":
       ensure            => present,
@@ -179,6 +181,7 @@ end script
       key_val_separator => '=',
       setting           => 'enable_metadata_proxy',
       value             => 'False',
+      notify  => Service['neutron-l3-agent'],
     }
     ini_setting { "l3 agent external network bridge":
       ensure            => present,
@@ -187,6 +190,16 @@ end script
       key_val_separator => '=',
       setting           => 'external_network_bridge',
       value             => '',
+      notify  => Service['neutron-l3-agent'],
+    }
+    ini_setting { "l3 agent handle_internal_only_routers":
+      ensure            => present,
+      path              => '/etc/neutron/l3_agent.ini',
+      section           => 'DEFAULT',
+      key_val_separator => '=',
+      setting           => 'handle_internal_only_routers',
+      value             => 'True',
+      notify  => Service['neutron-l3-agent'],
     }
 
     # config /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -226,7 +239,7 @@ end script
       value             => '/etc/neutron/plugins/ml2',
       notify            => Service['neutron-server'],
     }
-    if $bcf::params::openstack::bcf_controller_2 == "" {
+    if $bcf::params::openstack::bcf_controller_2 == ":8000" {
         $server = $bcf::params::openstack::bcf_controller_1
     }
     else {
@@ -341,17 +354,21 @@ end script
       ensure  => running,
       enable  => true,
     }
-    service { 'keystone':
+    service { 'neutron-plugin-openvswitch-agent':
+      ensure  => running,
+      enable  => true,
+    }
+    service { 'neutron-l3-agent':
       ensure  => running,
       enable  => true,
     }
     service { 'neutron-dhcp-agent':
-      ensure  => stopped,
-      enable  => false,
+      ensure  => running,
+      enable  => true,
     }
-    service { 'neutron-metadata-agent':
-      ensure  => stopped,
-      enable  => false,
+    service { 'keystone':
+      ensure  => running,
+      enable  => true,
     }
 }
 
