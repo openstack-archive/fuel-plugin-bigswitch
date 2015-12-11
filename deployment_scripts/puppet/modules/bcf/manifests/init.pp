@@ -15,30 +15,25 @@
 #
 class bcf {
 
-$bond_lacp = "bond-mode 4"
-$sys_desc_lacp = "5c:16:c7:00:00:04"
-$sys_desc_xor = "5c:16:c7:00:00:00"
+    $bond_lacp = "bond-mode 4"
+    $sys_desc_lacp = "5c:16:c7:00:00:04"
+    $sys_desc_xor = "5c:16:c7:00:00:00"
 
-# Network configuration
-$network_scheme = hiera_hash('network_scheme', {})
-prepare_network_config($network_scheme)
-$gw = get_default_gateways()
-$phy_devs = get_network_role_property('neutron/private', 'phys_dev')
-$if_str = "$phy_devs"
-if $if_str =~ /^bond.*/ {
-    $ifaces = join($phy_devs, ",")
-    $bond = true
-    $s = "${phy_devs[0]},"
-    $r = split("abc$ifaces", $s)
-    $itfs = $r[1]
-}
-else {
-    $bond = false
-    $itfs = $phy_devs
-}
-
-notify { "ifaces: $ifaces": }
-notify { "bond: $bond": }
-notify { "gw: $gw": }
-notify { "itfs: $itfs": }
+    # Network configuration
+    $network_scheme = hiera_hash('network_scheme', {})
+    prepare_network_config($network_scheme)
+    $gw = get_default_gateways()
+    $phy_devs = get_network_role_property('neutron/private', 'phys_dev')
+    $if_str = "$phy_devs"
+    if $if_str =~ /^bond.*/ {
+        $ifaces = join($phy_devs, ",")
+        $bond = true
+        $s = "${phy_devs[0]},"
+        $r = split("abc$ifaces", $s)
+        $itfs = $r[1]
+    }
+    else {
+        $bond = false
+        $itfs = $phy_devs
+    }
 }

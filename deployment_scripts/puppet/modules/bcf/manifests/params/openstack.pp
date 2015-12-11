@@ -36,8 +36,8 @@ class bcf::params::openstack {
   $rabbit_hash           = hiera('rabbit')
 
   $bcf_mode              = $bcf_hash['bcf_mode']
-  $bcf_controller_1      = $bcf_hash['bcf_controller_1']
-  $bcf_controller_2      = $bcf_hash['bcf_controller_2']
+  $bcf_controller_1      = "${bcf_hash['bcf_controller_1']}:8000"
+  $bcf_controller_2      = "${bcf_hash['bcf_controller_2']}:8000"
   $bcf_username          = $bcf_hash['bcf_controller_username']
   $bcf_password          = $bcf_hash['bcf_controller_password']
   $bcf_instance_id       = $bcf_hash['openstack_instance_id']
