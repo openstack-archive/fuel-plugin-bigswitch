@@ -14,7 +14,7 @@
 - id: primary-controller-lacp-bond
   type: puppet
   groups: [primary-controller, controller]
-  required_for: [openstack-controller]
+  required_for: [openstack-controller, connectivity_tests]
   requires: [netconfig]
   parameters:
     puppet_manifest: puppet/manifests/controller-network-config.pp
