@@ -1,11 +1,39 @@
 # These tasks will be merged into deployment graph. Here you
 # can specify new tasks for any roles, even built-in ones.
 
-- id: openstack-primary-controller-bigswitch
+# Install common packages
+- id: bigswitch-repo
+  type: puppet
+  groups: [primary-controller, controller, compute]
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    puppet_manifest: puppet/manifests/common-repo.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 720
+- id: primary-controller-lacp-bond
+  type: puppet
+  groups: [primary-controller, controller]
+  required_for: [openstack-controller]
+  requires: [netconfig]
+  parameters:
+    puppet_manifest: puppet/manifests/controller-network-config.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 720
+- id: primary-controller-cleanup
   type: puppet
   role: [primary-controller]
   required_for: [post_deployment_end]
   requires: [post_deployment_start]
+  parameters:
+    puppet_manifest: puppet/manifests/purge-os.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 720
+- id: openstack-primary-controller-bigswitch
+  type: puppet
+  role: [primary-controller]
+  required_for: [post_deployment_end]
+  requires: [primary-controller-cleanup]
   parameters:
     puppet_manifest: puppet/manifests/controller-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
@@ -27,6 +55,15 @@
   requires: [post_deployment_start]
   parameters:
     puppet_manifest: puppet/manifests/compute-config.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 720
+- id: ceph-config
+  type: puppet
+  role: [ceph-osd]
+  required_for: [post_deployment_end]
+  requires: [post_deployment_start]
+  parameters:
+    puppet_manifest: puppet/manifests/ceph-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
 #- id: fuel-plugin-bigswitch-deployment-puppet
