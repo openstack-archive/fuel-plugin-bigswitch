@@ -19,55 +19,6 @@ class bcf::p_only::controller {
     include bcf::params
     $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 
-    $ifcfg_bond0 = "/etc/network/interfaces.d/ifcfg-bond0"
-    $sys_desc_lacp = "5c:16:c7:00:00:04"
-    $sys_desc_xor = "5c:16:c7:00:00:00"
-    if $bcf::bond {
-        # ensure bond-mode is 802.3ad
-        exec { "ensure ${bcf::bond_lacp} in $ifcfg_bond0":
-            command => "echo '${bcf::bond_lacp}' >> $ifcfg_bond0",
-            unless => "grep -qe '${bcf::bond_lacp}' -- $ifcfg_bond0",
-            path => "/bin:/usr/bin",
-            require => Exec["update bond-mode in $ifcfg_bond0"],
-        }
-        exec { "update bond-mode in $ifcfg_bond0":
-            command => "sed -i 's/bond-mode.*/${bcf::bond_lacp}/' $ifcfg_bond0",
-            path => "/bin:/usr/bin"
-        }
-        $sys_desc = $bcf::sys_desc_lacp
-    }
-    else {
-        $sys_desc = $bcf::sys_desc_xor
-    }
-
-    # lldp
-    $a = file('/etc/fuel/plugins/fuel-plugin-bigswitch-1.0/python_scripts/send_lldp','/dev/null')
-    if($a != '') {
-        file { "/bin/send_lldp":
-            content => $a,
-            ensure  => file,
-            mode    => 0777,
-        }
-    }
-
-    file { "/etc/init/send_lldp.conf":
-        ensure  => file,
-        content => "
-description \"BCF LLDP\"
-start on runlevel [2345]
-stop on runlevel [!2345]
-respawn
-script
-    exec /bin/send_lldp --system-desc $sys_desc --system-name $(uname -n) -i 10 --network_interface $bcf::itfs
-end script
-",
-    }
-    service { "send_lldp":
-        ensure  => running,
-        enable  => true,
-        require => [File['/bin/send_lldp'], File['/etc/init/send_lldp.conf']],
-    }
-
     package { 'python-pip':
         ensure => 'installed',
     }
@@ -75,13 +26,6 @@ end script
         command => 'pip install "bsnstacklib<2015.2"',
         path    => "/usr/local/bin/:/usr/bin/:/bin",
         require => Package['python-pip']
-    }
-
-    # load bonding module
-    file_line {'load bonding on boot':
-        path    => '/etc/modules',
-        line    => 'bonding',
-        match   => '^bonding$',
     }
 
     # purge bcf controller public key
