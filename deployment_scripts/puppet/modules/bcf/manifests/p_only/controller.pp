@@ -28,6 +28,19 @@ class bcf::p_only::controller {
         require => Package['python-pip']
     }
 
+    exec { 'restart neutron-dhcp-agent':
+        command => 'crm resource restart p_neutron-dhcp-agent',
+        path    => '/usr/local/bin/:/bin/:/usr/sbin',
+    }
+    exec { 'restart neutron-l3-agent':
+        command => 'crm resource restart p_neutron-l3-agent',
+        path    => '/usr/local/bin/:/bin/:/usr/sbin',
+    }
+    exec { 'restart neutron-plugin-openvswitch-agent':
+        command => 'crm resource restart p_neutron-plugin-openvswitch-agent',
+        path    => '/usr/local/bin/:/bin/:/usr/sbin',
+    }
+
     # purge bcf controller public key
     exec { 'purge bcf key':
         command => "rm -rf /etc/neutron/plugins/ml2/host_certs/*",
@@ -43,7 +56,8 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'report_interval',
       value             => '60',
-      notify            => Service['neutron-server', 'neutron-plugin-openvswitch-agent', 'neutron-l3-agent', 'neutron-dhcp-agent'],
+      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent'], Service['neutron-server']],
+#      notify            => Service['neutron-server'],
     }
     ini_setting { "neutron.conf agent_down_time":
       ensure            => present,
@@ -52,7 +66,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'agent_down_time',
       value             => '150',
-      notify            => Service['neutron-server', 'neutron-plugin-openvswitch-agent', 'neutron-l3-agent', 'neutron-dhcp-agent'],
+      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent'], Service['neutron-server']],
     }
     ini_setting { "neutron.conf service_plugins":
       ensure            => present,
@@ -70,6 +84,15 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'dhcp_agents_per_network',
       value             => '1',
+      notify            => Service['neutron-server'],
+    }
+    ini_setting { "neutron.conf network_scheduler_driver":
+      ensure            => present,
+      path              => '/etc/neutron/neutron.conf',
+      section           => 'DEFAULT',
+      key_val_separator => '=',
+      setting           => 'network_scheduler_driver',
+      value             => 'neutron.scheduler.dhcp_agent_scheduler.WeightScheduler',
       notify            => Service['neutron-server'],
     }
     ini_setting { "neutron.conf notification driver":
@@ -125,7 +148,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'enable_metadata_proxy',
       value             => 'False',
-      notify  => Service['neutron-l3-agent'],
+      notify            => Exec['restart neutron-l3-agent'],
     }
     ini_setting { "l3 agent external network bridge":
       ensure            => present,
@@ -134,7 +157,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'external_network_bridge',
       value             => '',
-      notify  => Service['neutron-l3-agent'],
+      notify            => Exec['restart neutron-l3-agent'],
     }
     ini_setting { "l3 agent handle_internal_only_routers":
       ensure            => present,
@@ -143,7 +166,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'handle_internal_only_routers',
       value             => 'True',
-      notify  => Service['neutron-l3-agent'],
+      notify            => Exec['restart neutron-l3-agent'],
     }
 
     # config /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -289,24 +312,8 @@ class bcf::p_only::controller {
       notify  => Service['neutron-server'],
     }
 
-    # heat-engine, neutron-server, neutron-dhcp-agent and neutron-metadata-agent
-    service { 'heat-engine':
-      ensure  => running,
-      enable  => true,
-    }
+    # neutron-server, keystone
     service { 'neutron-server':
-      ensure  => running,
-      enable  => true,
-    }
-    service { 'neutron-plugin-openvswitch-agent':
-      ensure  => running,
-      enable  => true,
-    }
-    service { 'neutron-l3-agent':
-      ensure  => running,
-      enable  => true,
-    }
-    service { 'neutron-dhcp-agent':
       ensure  => running,
       enable  => true,
     }

@@ -14,7 +14,7 @@
 #    under the License.
 #
 
-notice('MODULAR: bigswitch/common-repo.pp')
+notice('MODULAR: bigswitch common-repo.pp')
 
 class bcf::common-repo {
 

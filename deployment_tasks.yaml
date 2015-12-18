@@ -11,16 +11,16 @@
     puppet_manifest: puppet/manifests/common-repo.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-- id: primary-controller-lacp-bond
+- id: lacp-bond
   type: puppet
-  groups: [primary-controller, controller]
+  groups: [primary-controller, controller, compute, ceph-osd]
   required_for: [openstack-controller, connectivity_tests]
   requires: [netconfig]
   parameters:
     puppet_manifest: puppet/manifests/controller-network-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-- id: primary-controller-cleanup
+- id: controller-cleanup
   type: puppet
   role: [primary-controller]
   required_for: [post_deployment_end]
@@ -29,25 +29,15 @@
     puppet_manifest: puppet/manifests/purge-os.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-- id: openstack-primary-controller-bigswitch
-  type: puppet
-  role: [primary-controller]
-  required_for: [post_deployment_end]
-  requires: [primary-controller-cleanup]
-  parameters:
-    puppet_manifest: puppet/manifests/controller-config.pp
-    puppet_modules: puppet/modules:/etc/puppet/modules
-    timeout: 720
 - id: openstack-controller-bigswitch
   type: puppet
-  role: [controller]
+  role: [primary-controller, controller]
   required_for: [post_deployment_end]
-  requires: [post_deployment_start]
+  requires: [controller-cleanup]
   parameters:
     puppet_manifest: puppet/manifests/controller-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-# Setup compute node
 - id: compute-config
   type: puppet
   role: [compute]
@@ -57,43 +47,12 @@
     puppet_manifest: puppet/manifests/compute-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-- id: ceph-config
-  type: puppet
-  role: [ceph-osd]
-  required_for: [post_deployment_end]
-  requires: [post_deployment_start]
-  parameters:
-    puppet_manifest: puppet/manifests/ceph-config.pp
-    puppet_modules: puppet/modules:/etc/puppet/modules
-    timeout: 720
-#- id: fuel-plugin-bigswitch-deployment-puppet
-#  type: puppet
-#  groups: [fuel-plugin-bigswitch]
-#  required_for: [deploy_end]
-#  requires: [deploy_start]
-#  parameters:
-#    puppet_manifest: "deploy.pp"
-#    puppet_modules: ""
-#    timeout: 3600
-#
-#- id: fuel-plugin-bigswitch-post-deployment-sh
+# Reboot compute nodes, so they pick new network configuration
+#- id: compute-reboot
 #  type: shell
-#  role: [fuel-plugin-bigswitch]
+#  role: [compute]
 #  required_for: [post_deployment_end]
-#  requires: [post_deployment_start]
+#  requires: [compute-config]
 #  parameters:
-#    cmd: echo post_deployment_task_executed > /tmp/post_deployment
-#    retries: 3
-#    interval: 20
-#    timeout: 180
-#
-#- id: fuel-plugin-bigswitch-pre-deployment-sh
-#  type: shell
-#  role: [fuel-plugin-bigswitch]
-#  required_for: [pre_deployment_end]
-#  requires: [pre_deployment_start]
-#  parameters:
-#    cmd: echo pre_deployment_task_executed > /tmp/pre_deployment
-#    retries: 3
-#    interval: 20
-#    timeout: 180
+#    cmd: /sbin/reboot;
+#    timeout: 720
