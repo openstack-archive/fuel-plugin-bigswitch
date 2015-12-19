@@ -17,8 +17,6 @@ class bcf::p_only::compute {
 
     include bcf
     include bcf::params
-    # all of the exec statements use this path
-    $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
  
     # edit rc.local for cron job and default gw
     file { "/etc/rc.local":
@@ -48,6 +46,11 @@ class bcf::p_only::compute {
         line    => "exit 0",
     }
 
+    exec { 'set default gw':
+        command => "ip route del default; ip route add default via ${bcf::gw}",
+        path    => "/usr/local/bin/:/usr/bin/:/bin:/sbin",
+    }
+
     # config /etc/neutron/neutron.conf
     ini_setting { "neutron.conf report_interval":
       ensure            => present,
@@ -56,6 +59,7 @@ class bcf::p_only::compute {
       key_val_separator => '=',
       setting           => 'report_interval',
       value             => '60',
+      notify            => Service['neutron-plugin-openvswitch-agent'],
     }
     ini_setting { "neutron.conf agent_down_time":
       ensure            => present,
@@ -64,6 +68,7 @@ class bcf::p_only::compute {
       key_val_separator => '=',
       setting           => 'agent_down_time',
       value             => '150',
+      notify            => Service['neutron-plugin-openvswitch-agent'],
     }
     ini_setting { "neutron.conf service_plugins":
       ensure            => present,
@@ -72,6 +77,7 @@ class bcf::p_only::compute {
       key_val_separator => '=',
       setting           => 'service_plugins',
       value             => 'router',
+      notify            => Service['neutron-plugin-openvswitch-agent'],
     }
     ini_setting { "neutron.conf dhcp_agents_per_network":
       ensure            => present,
@@ -80,6 +86,7 @@ class bcf::p_only::compute {
       key_val_separator => '=',
       setting           => 'dhcp_agents_per_network',
       value             => '1',
+      notify            => Service['neutron-plugin-openvswitch-agent'],
     }
     ini_setting { "neutron.conf notification driver":
       ensure            => present,
@@ -88,6 +95,7 @@ class bcf::p_only::compute {
       key_val_separator => '=',
       setting           => 'notification_driver',
       value             => 'messaging',
+      notify            => Service['neutron-plugin-openvswitch-agent'],
     }
     
     # set the correct properties in ml2_conf.ini on compute as well
@@ -108,78 +116,6 @@ class bcf::p_only::compute {
       key_val_separator => '=',
       setting           => 'tenant_network_types',
       value             => 'vlan',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
-    }
-    ini_setting { "ml2 mechanism drivers":
-      ensure            => present,
-      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-      section           => 'ml2',
-      key_val_separator => '=',
-      setting           => 'mechanism_drivers',
-      value             => 'openvswitch,bsn_ml2',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
-    }
-    ini_setting { "ml2 restproxy ssl cert directory":
-      ensure            => present,
-      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-      section           => 'restproxy',
-      key_val_separator => '=',
-      setting           => 'ssl_cert_directory',
-      value             => '/etc/neutron/plugins/ml2',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
-    }
-    ini_setting { "ml2 restproxy servers":
-      ensure            => present,
-      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-      section           => 'restproxy',
-      key_val_separator => '=',
-      setting           => 'servers',
-      value             => "${bcf::params::openstack::bcf_controller_1},${bcf::params::openstack::bcf_controller_2}",
-      notify            => Service['neutron-plugin-openvswitch-agent'],
-    }
-    ini_setting { "ml2 restproxy server auth":
-      ensure            => present,
-      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-      section           => 'restproxy',
-      key_val_separator => '=',
-      setting           => 'server_auth',
-      value             => "${bcf::params::openstack::bcf_username}:${bcf::params::openstack::bcf_password}",
-      notify            => Service['neutron-plugin-openvswitch-agent'],
-    }
-    ini_setting { "ml2 restproxy server ssl":
-      ensure            => present,
-      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-      section           => 'restproxy',
-      key_val_separator => '=',
-      setting           => 'server_ssl',
-      value             => 'True',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
-    }
-    ini_setting { "ml2 restproxy auto sync on failure":
-      ensure            => present,
-      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-      section           => 'restproxy',
-      key_val_separator => '=',
-      setting           => 'auto_sync_on_failure',
-      value             => 'True',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
-    }
-    ini_setting { "ml2 restproxy consistency interval":
-      ensure            => present,
-      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-      section           => 'restproxy',
-      key_val_separator => '=',
-      setting           => 'consistency_interval',
-      value             => 60,
-      notify            => Service['neutron-plugin-openvswitch-agent'],
-    }
-    ini_setting { "ml2 restproxy neutron_id":
-      ensure            => present,
-      path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-      section           => 'restproxy',
-      key_val_separator => '=',
-      setting           => 'neutron_id',
-      value             => "${bcf::params::openstack::bcf_instance_id}",
       notify            => Service['neutron-plugin-openvswitch-agent'],
     }
     
@@ -210,48 +146,6 @@ class bcf::p_only::compute {
       content           => 'dhcp-option-force=26,1400',
     }
     
-    # dhcp configuration
-    ini_setting { "dhcp agent interface driver":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'interface_driver',
-        value             => 'neutron.agent.linux.interface.OVSInterfaceDriver',
-    }
-    ini_setting { "dhcp agent dhcp driver":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'dhcp_driver',
-        value             => 'neutron.agent.linux.dhcp.Dnsmasq',
-    }
-    ini_setting { "dhcp agent enable isolated metadata":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'enable_isolated_metadata',
-        value             => 'True',
-    }
-    ini_setting { "dhcp agent disable metadata network":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'enable_metadata_network',
-        value             => 'False',
-    }
-    ini_setting { "dhcp agent disable dhcp_delete_namespaces":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'dhcp_delete_namespaces',
-        value             => 'False',
-    }
-
     service { 'nova-compute':
         ensure  => running,
         enable  => true,
@@ -264,7 +158,7 @@ class bcf::p_only::compute {
         section           => 'DEFAULT',
         key_val_separator => '=',
         setting           => 'novncproxy_base_url',
-        value             => "http://${bcf::public_vip}:6080/vnc_auto.html",
+        value             => "https://${bcf::public_vip}:6080/vnc_auto.html",
         notify            => Service['nova-compute']
     }
 }    

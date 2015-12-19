@@ -32,6 +32,10 @@ class bcf::p_only::controller {
         command => 'crm resource restart p_neutron-dhcp-agent',
         path    => '/usr/local/bin/:/bin/:/usr/sbin',
     }
+    exec { 'restart neutron-metadata-agent':
+        command => 'crm resource restart p_neutron-metadata-agent',
+        path    => '/usr/local/bin/:/bin/:/usr/sbin',
+    }
     exec { 'restart neutron-l3-agent':
         command => 'crm resource restart p_neutron-l3-agent',
         path    => '/usr/local/bin/:/bin/:/usr/sbin',
@@ -56,7 +60,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'report_interval',
       value             => '60',
-      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent'], Service['neutron-server']],
+      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent', 'restart neutron-metadata-agent'], Service['neutron-server']],
 #      notify            => Service['neutron-server'],
     }
     ini_setting { "neutron.conf agent_down_time":
@@ -66,7 +70,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'agent_down_time',
       value             => '150',
-      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent'], Service['neutron-server']],
+      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent', 'restart neutron-metadata-agent'], Service['neutron-server']],
     }
     ini_setting { "neutron.conf service_plugins":
       ensure            => present,
@@ -84,7 +88,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'dhcp_agents_per_network',
       value             => '1',
-      notify            => Service['neutron-server'],
+      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent', 'restart neutron-metadata-agent'], Service['neutron-server']],
     }
     ini_setting { "neutron.conf network_scheduler_driver":
       ensure            => present,
@@ -93,7 +97,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'network_scheduler_driver',
       value             => 'neutron.scheduler.dhcp_agent_scheduler.WeightScheduler',
-      notify            => Service['neutron-server'],
+      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent', 'restart neutron-metadata-agent'], Service['neutron-server']],
     }
     ini_setting { "neutron.conf notification driver":
       ensure            => present,
