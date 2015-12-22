@@ -29,15 +29,26 @@
     puppet_manifest: puppet/manifests/purge-os.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-- id: openstack-controller-bigswitch
+- id: openstack-primary-controller-bigswitch
   type: puppet
-  role: [primary-controller, controller]
+  role: [primary-controller]
   required_for: [post_deployment_end]
   requires: [controller-cleanup]
   parameters:
     puppet_manifest: puppet/manifests/controller-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
+- id: openstack-controller-bigswitch
+  type: puppet
+  role: [controller]
+  required_for: [post_deployment_end]
+  requires: [openstack-primary-controller-bigswitch]
+  parameters:
+    puppet_manifest: puppet/manifests/controller-config.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 720
+    strategy:
+      type: one-by-one
 - id: compute-config
   type: puppet
   role: [compute]
