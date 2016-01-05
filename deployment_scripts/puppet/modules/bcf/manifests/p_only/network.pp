@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-class bcf::p_only::controller-network {
+class bcf::p_only::network {
 
     include bcf
     include bcf::params

@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-class bcf::p_only::controller {
+class bcf::p_only::reconfigure-services {
 
     include bcf
     include bcf::params
@@ -26,23 +26,6 @@ class bcf::p_only::controller {
         command => 'pip install "bsnstacklib<2015.2"',
         path    => "/usr/local/bin/:/usr/bin/:/bin",
         require => Package['python-pip']
-    }
-
-    exec { 'restart neutron-dhcp-agent':
-        command => 'crm resource restart p_neutron-dhcp-agent',
-        path    => '/usr/local/bin/:/bin/:/usr/sbin',
-    }
-    exec { 'restart neutron-metadata-agent':
-        command => 'crm resource restart p_neutron-metadata-agent',
-        path    => '/usr/local/bin/:/bin/:/usr/sbin',
-    }
-    exec { 'restart neutron-l3-agent':
-        command => 'crm resource restart p_neutron-l3-agent',
-        path    => '/usr/local/bin/:/bin/:/usr/sbin',
-    }
-    exec { 'restart neutron-plugin-openvswitch-agent':
-        command => 'crm resource restart p_neutron-plugin-openvswitch-agent',
-        path    => '/usr/local/bin/:/bin/:/usr/sbin',
     }
 
     # purge bcf controller public key
@@ -60,8 +43,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'report_interval',
       value             => '60',
-      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent', 'restart neutron-metadata-agent'], Service['neutron-server']],
-#      notify            => Service['neutron-server'],
+      notify            => Service['neutron-server'],
     }
     ini_setting { "neutron.conf agent_down_time":
       ensure            => present,
@@ -70,7 +52,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'agent_down_time',
       value             => '150',
-      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent', 'restart neutron-metadata-agent'], Service['neutron-server']],
+      notify            => Service['neutron-server'],
     }
     ini_setting { "neutron.conf service_plugins":
       ensure            => present,
@@ -88,7 +70,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'dhcp_agents_per_network',
       value             => '1',
-      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent', 'restart neutron-metadata-agent'], Service['neutron-server']],
+      notify            => Service['neutron-server'],
     }
     ini_setting { "neutron.conf network_scheduler_driver":
       ensure            => present,
@@ -97,7 +79,7 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'network_scheduler_driver',
       value             => 'neutron.scheduler.dhcp_agent_scheduler.WeightScheduler',
-      notify            => [Exec['restart neutron-plugin-openvswitch-agent', 'restart neutron-l3-agent', 'restart neutron-dhcp-agent', 'restart neutron-metadata-agent'], Service['neutron-server']],
+      notify            => Service['neutron-server'],
     }
     ini_setting { "neutron.conf notification driver":
       ensure            => present,
@@ -152,7 +134,6 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'enable_metadata_proxy',
       value             => 'False',
-      notify            => Exec['restart neutron-l3-agent'],
     }
     ini_setting { "l3 agent external network bridge":
       ensure            => present,
@@ -161,7 +142,6 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'external_network_bridge',
       value             => '',
-      notify            => Exec['restart neutron-l3-agent'],
     }
     ini_setting { "l3 agent handle_internal_only_routers":
       ensure            => present,
@@ -170,7 +150,6 @@ class bcf::p_only::controller {
       key_val_separator => '=',
       setting           => 'handle_internal_only_routers',
       value             => 'True',
-      notify            => Exec['restart neutron-l3-agent'],
     }
 
     # config /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -326,4 +305,3 @@ class bcf::p_only::controller {
       enable  => true,
     }
 }
-

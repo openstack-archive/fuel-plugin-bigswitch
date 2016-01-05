@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-notice("MODULAR:  bigswitch controller-config")
+notice("MODULAR:  bigswitch reconfigure-services")
 include bcf::params
 if $bcf::params::openstack::bcf_mode == 'P-Only' {
-    include bcf::p_only::controller
+    include bcf::p_only::reconfigure-services
 }
 else {
-    include bcf::p_v::controller
+    include bcf::p_v::reconfigure-services
 }
