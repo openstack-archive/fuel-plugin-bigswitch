@@ -151,6 +151,15 @@ class bcf::p_only::compute {
         enable  => true,
     }
 
+    $public_ssl = hiera('public_ssl')
+    $horizon_ssl = $public_ssl['horizon']
+    if $horizon_ssl {
+        $novnc_protocol = 'https'
+    }
+    else {
+        $novnc_protocol = 'http'
+    }
+        
     # update nova.conf for novncproxy_base_url
     ini_setting { "nova novncproxy_base_url":
         ensure            => present,
