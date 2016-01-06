@@ -167,7 +167,7 @@ class bcf::p_only::compute {
         section           => 'DEFAULT',
         key_val_separator => '=',
         setting           => 'novncproxy_base_url',
-        value             => "https://${bcf::public_vip}:6080/vnc_auto.html",
+        value             => "${novnc_protocol}://${bcf::public_vip}:6080/vnc_auto.html",
         notify            => Service['nova-compute']
     }
 }    
