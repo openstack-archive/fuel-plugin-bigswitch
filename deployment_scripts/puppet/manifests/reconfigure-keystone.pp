@@ -1,5 +1,5 @@
 #
-#    Copyright 2015 BigSwitch Networks
+#    Copyright 2015 BigSwitch Networks, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -13,11 +13,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-notice("MODULAR:  bigswitch reconfigure-services")
-include bcf::params
-if $bcf::params::openstack::bcf_mode == 'P-Only' {
-    include bcf::p_only::reconfigure-services
+notice("MODULAR:  bigswitch reconfigure-keystone")
+
+# configure /etc/keystone/keystone.conf
+ini_setting { "keystone.conf notification driver":
+    ensure            => present,
+    path              => '/etc/keystone/keystone.conf',
+    section           => 'DEFAULT',
+    key_val_separator => '=',
+    setting           => 'notification_driver',
+    value             => 'messaging',
+    notify            => Service['keystone'],
 }
-else {
-    include bcf::p_v::reconfigure-services
+
+service { 'keystone':
+    ensure  => running,
+    enable  => true,
 }

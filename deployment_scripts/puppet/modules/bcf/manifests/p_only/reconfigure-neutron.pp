@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-class bcf::p_only::reconfigure-services {
+class bcf::p_only::reconfigure-neutron {
 
     include bcf
     include bcf::params
@@ -89,17 +89,6 @@ class bcf::p_only::reconfigure-services {
       setting           => 'notification_driver',
       value             => 'messaging',
       notify            => Service['neutron-server'],
-    }
-
-    # configure /etc/keystone/keystone.conf
-    ini_setting { "keystone.conf notification driver":
-      ensure            => present,
-      path              => '/etc/keystone/keystone.conf',
-      section           => 'DEFAULT',
-      key_val_separator => '=',
-      setting           => 'notification_driver',
-      value             => 'messaging',
-      notify            => Service['keystone'],
     }
 
     # config /etc/neutron/plugin.ini
@@ -297,10 +286,6 @@ class bcf::p_only::reconfigure-services {
 
     # neutron-server, keystone
     service { 'neutron-server':
-      ensure  => running,
-      enable  => true,
-    }
-    service { 'keystone':
       ensure  => running,
       enable  => true,
     }
