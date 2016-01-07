@@ -10,43 +10,47 @@
     puppet_manifest: puppet/manifests/network-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-
-# Install common packages
-#- id: bigswitch-repo
-#  type: puppet
-#  groups: [primary-controller, controller, compute]
-#  required_for: [post_deployment_end]
-#  requires: [post_deployment_start]
-#  parameters:
-#    puppet_manifest: puppet/manifests/common-repo.pp
-#    puppet_modules: puppet/modules:/etc/puppet/modules
-#    timeout: 720
-# Only on primary controller: clean up the Neutron objects created
-# by Fuel default deployment
 - id: controller-cleanup
   type: puppet
   role: [primary-controller]
   required_for: [post_deployment_end]
-  #requires: [bigswitch-repo]
   requires: [post_deployment_start]
   parameters:
     puppet_manifest: puppet/manifests/purge-os.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-- id: reconfigure-services
+- id: reconfigure-keystone
   type: puppet
   role: [primary-controller, controller]
   required_for: [post_deployment_end]
   requires: [controller-cleanup]
   parameters:
-    puppet_manifest: puppet/manifests/reconfigure-services.pp
+    puppet_manifest: puppet/manifests/reconfigure-keystone.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 720
+- id: reconfigure-controller-neutron
+  type: puppet
+  role: [controller]
+  required_for: [post_deployment_end]
+  requires: [reconfigure-keystone]
+  parameters:
+    puppet_manifest: puppet/manifests/reconfigure-neutron.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 720
+- id: reconfigure-primary-controller-neutron
+  type: puppet
+  role: [primary-controller]
+  required_for: [post_deployment_end]
+  requires: [reconfigure-controller-neutron]
+  parameters:
+    puppet_manifest: puppet/manifests/reconfigure-neutron.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
 - id: openstack-restart-cluster-services
   type: puppet
   role: [primary-controller]
   required_for: [post_deployment_end]
-  requires: [reconfigure-services]
+  requires: [reconfigure-primary-controller-neutron]
   parameters:
     puppet_manifest: puppet/manifests/restart-cluster-services.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
@@ -60,12 +64,3 @@
     puppet_manifest: puppet/manifests/compute-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-# Reboot compute nodes, so they pick new network configuration
-#- id: compute-reboot
-#  type: shell
-#  role: [compute]
-#  required_for: [post_deployment_end]
-#  requires: [compute-config]
-#  parameters:
-#    cmd: /sbin/reboot;
-#    timeout: 720
