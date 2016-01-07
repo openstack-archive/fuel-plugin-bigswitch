@@ -10,13 +10,13 @@
     puppet_manifest: puppet/manifests/network-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-- id: controller-cleanup
+- id: openstack-cleanup
   type: puppet
   role: [primary-controller]
   required_for: [post_deployment_end]
   requires: [post_deployment_start]
   parameters:
-    puppet_manifest: puppet/manifests/purge-os.pp
+    puppet_manifest: puppet/manifests/openstack-cleanup.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
 - id: reconfigure-keystone

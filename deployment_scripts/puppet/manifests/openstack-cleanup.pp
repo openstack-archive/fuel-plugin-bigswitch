@@ -14,7 +14,7 @@
 #    under the License.
 #
 
-notice('MODULAR: bigswitch purge-os.pp')
+notice('MODULAR: bigswitch openstack-cleanup')
 
 file { '/etc/bigswitch':
     ensure => 'directory',
