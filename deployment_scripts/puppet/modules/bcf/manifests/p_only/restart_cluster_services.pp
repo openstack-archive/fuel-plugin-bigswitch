@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-class bcf::p_only::restart-cluster-services {
+class bcf::p_only::restart_cluster_services {
 
     include bcf
     include bcf::params
-    $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
+    $binpath = '/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin'
 
     $nodes_hash = hiera('nodes', {})
     $roles = node_roles($nodes_hash, hiera('uid'))

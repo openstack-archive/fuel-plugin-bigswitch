@@ -23,12 +23,12 @@
   type: puppet
   role: [primary-controller, controller]
   required_for: [post_deployment_end]
-  requires: [controller-cleanup]
+  requires: [openstack-cleanup]
   parameters:
     puppet_manifest: puppet/manifests/reconfigure-keystone.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-- id: reconfigure-controller-neutron
+- id: reconfigure-neutron
   type: puppet
   role: [controller]
   required_for: [post_deployment_end]
@@ -41,12 +41,12 @@
   type: puppet
   role: [primary-controller]
   required_for: [post_deployment_end]
-  requires: [reconfigure-controller-neutron]
+  requires: [reconfigure-neutron]
   parameters:
     puppet_manifest: puppet/manifests/reconfigure-neutron.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
-- id: openstack-restart-cluster-services
+- id: restart-cluster-services
   type: puppet
   role: [primary-controller]
   required_for: [post_deployment_end]
@@ -59,7 +59,7 @@
   type: puppet
   role: [compute]
   required_for: [post_deployment_end]
-  requires: [openstack-restart-cluster-services]
+  requires: [restart-cluster-services]
   parameters:
     puppet_manifest: puppet/manifests/compute-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules

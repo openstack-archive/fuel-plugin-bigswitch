@@ -13,30 +13,31 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-class bcf::p_only::reconfigure-neutron {
+class bcf::p_only::reconfigure_neutron {
 
     include bcf
     include bcf::params
-    $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
+    include bcf::params::openstack
+    $binpath = '/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin'
 
     package { 'python-pip':
-        ensure => 'installed',
+      ensure => 'installed',
     }
     exec { 'bsnstacklib':
-        command => 'pip install "bsnstacklib<2015.2"',
-        path    => "/usr/local/bin/:/usr/bin/:/bin",
-        require => Package['python-pip']
+      command => 'pip install "bsnstacklib<2015.2"',
+      path    => '/usr/local/bin/:/usr/bin/:/bin',
+      require => Package['python-pip']
     }
 
     # purge bcf controller public key
     exec { 'purge bcf key':
-        command => "rm -rf /etc/neutron/plugins/ml2/host_certs/*",
+        command => 'rm -rf /etc/neutron/plugins/ml2/host_certs/*',
         path    => $binpath,
         notify  => Service['neutron-server'],
     }
 
     # config /etc/neutron/neutron.conf
-    ini_setting { "neutron.conf report_interval":
+    ini_setting { 'neutron.conf report_interval':
       ensure            => present,
       path              => '/etc/neutron/neutron.conf',
       section           => 'agent',
@@ -45,7 +46,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => '60',
       notify            => Service['neutron-server'],
     }
-    ini_setting { "neutron.conf agent_down_time":
+    ini_setting { 'neutron.conf agent_down_time':
       ensure            => present,
       path              => '/etc/neutron/neutron.conf',
       section           => 'DEFAULT',
@@ -54,7 +55,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => '150',
       notify            => Service['neutron-server'],
     }
-    ini_setting { "neutron.conf service_plugins":
+    ini_setting { 'neutron.conf service_plugins':
       ensure            => present,
       path              => '/etc/neutron/neutron.conf',
       section           => 'DEFAULT',
@@ -63,7 +64,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => 'router',
       notify            => Service['neutron-server'],
     }
-    ini_setting { "neutron.conf dhcp_agents_per_network":
+    ini_setting { 'neutron.conf dhcp_agents_per_network':
       ensure            => present,
       path              => '/etc/neutron/neutron.conf',
       section           => 'DEFAULT',
@@ -72,7 +73,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => '1',
       notify            => Service['neutron-server'],
     }
-    ini_setting { "neutron.conf network_scheduler_driver":
+    ini_setting { 'neutron.conf network_scheduler_driver':
       ensure            => present,
       path              => '/etc/neutron/neutron.conf',
       section           => 'DEFAULT',
@@ -81,7 +82,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => 'neutron.scheduler.dhcp_agent_scheduler.WeightScheduler',
       notify            => Service['neutron-server'],
     }
-    ini_setting { "neutron.conf notification driver":
+    ini_setting { 'neutron.conf notification driver':
       ensure            => present,
       path              => '/etc/neutron/neutron.conf',
       section           => 'DEFAULT',
@@ -92,7 +93,7 @@ class bcf::p_only::reconfigure-neutron {
     }
 
     # config /etc/neutron/plugin.ini
-    ini_setting { "neutron plugin.ini firewall_driver":
+    ini_setting { 'neutron plugin.ini firewall_driver':
       ensure            => present,
       path              => '/etc/neutron/plugin.ini',
       section           => 'securitygroup',
@@ -101,7 +102,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => 'neutron.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver',
       notify            => Service['neutron-server'],
     }
-    ini_setting { "neutron plugin.ini enable_security_group":
+    ini_setting { 'neutron plugin.ini enable_security_group':
       ensure            => present,
       path              => '/etc/neutron/plugin.ini',
       section           => 'securitygroup',
@@ -111,12 +112,12 @@ class bcf::p_only::reconfigure-neutron {
       notify            => Service['neutron-server'],
     }
     file { '/etc/neutron/dnsmasq-neutron.conf':
-      ensure            => file,
-      content           => 'dhcp-option-force=26,1400',
+      ensure  => file,
+      content => 'dhcp-option-force=26,1400',
     }
 
     # config /etc/neutron/l3-agent.ini
-    ini_setting { "l3 agent disable metadata proxy":
+    ini_setting { 'l3 agent disable metadata proxy':
       ensure            => present,
       path              => '/etc/neutron/l3_agent.ini',
       section           => 'DEFAULT',
@@ -124,7 +125,7 @@ class bcf::p_only::reconfigure-neutron {
       setting           => 'enable_metadata_proxy',
       value             => 'False',
     }
-    ini_setting { "l3 agent external network bridge":
+    ini_setting { 'l3 agent external network bridge':
       ensure            => present,
       path              => '/etc/neutron/l3_agent.ini',
       section           => 'DEFAULT',
@@ -132,7 +133,7 @@ class bcf::p_only::reconfigure-neutron {
       setting           => 'external_network_bridge',
       value             => '',
     }
-    ini_setting { "l3 agent handle_internal_only_routers":
+    ini_setting { 'l3 agent handle_internal_only_routers':
       ensure            => present,
       path              => '/etc/neutron/l3_agent.ini',
       section           => 'DEFAULT',
@@ -142,7 +143,7 @@ class bcf::p_only::reconfigure-neutron {
     }
 
     # config /etc/neutron/plugins/ml2/ml2_conf.ini
-    ini_setting { "ml2 type dirvers":
+    ini_setting { 'ml2 type dirvers':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'ml2',
@@ -151,7 +152,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => 'vlan',
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 tenant network types":
+    ini_setting { 'ml2 tenant network types':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'ml2',
@@ -160,7 +161,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => 'vlan',
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 mechanism drivers":
+    ini_setting { 'ml2 mechanism drivers':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'ml2',
@@ -169,7 +170,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => 'openvswitch,bsn_ml2',
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 restproxy ssl cert directory":
+    ini_setting { 'ml2 restproxy ssl cert directory':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
@@ -178,14 +179,14 @@ class bcf::p_only::reconfigure-neutron {
       value             => '/etc/neutron/plugins/ml2',
       notify            => Service['neutron-server'],
     }
-    if $bcf::params::openstack::bcf_controller_2 == ":8000" {
+    if $bcf::params::openstack::bcf_controller_2 == ':8000' {
         $server = $bcf::params::openstack::bcf_controller_1
     }
     else {
         $server = "${bcf::params::openstack::bcf_controller_1},${bcf::params::openstack::bcf_controller_2}"
     }
 
-    ini_setting { "ml2 restproxy servers":
+    ini_setting { 'ml2 restproxy servers':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
@@ -194,7 +195,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => $server,
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 restproxy server auth":
+    ini_setting { 'ml2 restproxy server auth':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
@@ -203,7 +204,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => "${bcf::params::openstack::bcf_username}:${bcf::params::openstack::bcf_password}",
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 restproxy server ssl":
+    ini_setting { 'ml2 restproxy server ssl':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
@@ -212,7 +213,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => 'True',
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 restproxy auto sync on failure":
+    ini_setting { 'ml2 restproxy auto sync on failure':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
@@ -221,7 +222,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => 'True',
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 restproxy consistency interval":
+    ini_setting { 'ml2 restproxy consistency interval':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
@@ -230,7 +231,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => 60,
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 restproxy neutron_id":
+    ini_setting { 'ml2 restproxy neutron_id':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
@@ -239,7 +240,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => "${bcf::params::openstack::bcf_instance_id}",
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 restproxy auth_url":
+    ini_setting { 'ml2 restproxy auth_url':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
@@ -248,7 +249,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => "http://${bcf::params::openstack::keystone_vip}:35357",
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 restproxy auth_user":
+    ini_setting { 'ml2 restproxy auth_user':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
@@ -257,7 +258,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => "${bcf::params::openstack::auth_user}",
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 restproxy auth_password":
+    ini_setting { 'ml2 restproxy auth_password':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
@@ -266,7 +267,7 @@ class bcf::p_only::reconfigure-neutron {
       value             => "${bcf::params::openstack::auth_password}",
       notify            => Service['neutron-server'],
     }
-    ini_setting { "ml2 restproxy auth_tenant_name":
+    ini_setting { 'ml2 restproxy auth_tenant_name':
       ensure            => present,
       path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
       section           => 'restproxy',
@@ -286,7 +287,7 @@ class bcf::p_only::reconfigure-neutron {
 
     # neutron-server, keystone
     service { 'neutron-server':
-      ensure  => running,
-      enable  => true,
+      ensure => running,
+      enable => true,
     }
 }

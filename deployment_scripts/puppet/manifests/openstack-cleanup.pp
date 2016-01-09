@@ -17,16 +17,15 @@
 notice('MODULAR: bigswitch openstack-cleanup')
 
 file { '/etc/bigswitch':
-    ensure => 'directory',
+  ensure => 'directory',
 }
 
 file { '/etc/bigswitch/purge_all.sh':
-    source => 'puppet:///modules/bcf/purge_all.sh',
-    ensure => file,
+  ensure => file,
+  source => 'puppet:///modules/bcf/purge_all.sh',
 }
 exec { 'purge openstack neutron objects':
-    command => 'bash /etc/bigswitch/purge_all.sh',
-    path    => "/usr/local/bin/:/usr/bin/:/bin",
-    require => File['/etc/bigswitch/purge_all.sh']
+  command => 'bash /etc/bigswitch/purge_all.sh',
+  path    => '/usr/local/bin/:/usr/bin/:/bin',
+  require => File['/etc/bigswitch/purge_all.sh']
 }
-

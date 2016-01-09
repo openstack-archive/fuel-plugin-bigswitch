@@ -16,17 +16,11 @@
 
 notice('MODULAR: bigswitch common-repo.pp')
 
-class bcf::common-repo {
-
-    $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
-
-    package { 'python-pip':
-        ensure => 'installed',
-    }
-    exec { 'bsnstacklib':
-        command => 'pip install "bsnstacklib<2015.2"',
-        path    => "/usr/local/bin/:/usr/bin/:/bin",
-        require => Package['python-pip']
-    }
+package { 'python-pip':
+  ensure => 'installed',
 }
-
+exec { 'bsnstacklib':
+  command => 'pip install "bsnstacklib<2015.2"',
+  path    => '/usr/local/bin/:/usr/bin/:/bin',
+  require => Package['python-pip']
+}

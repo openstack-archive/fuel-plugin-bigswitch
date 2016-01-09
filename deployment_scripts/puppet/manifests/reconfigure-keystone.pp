@@ -13,20 +13,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-notice("MODULAR:  bigswitch reconfigure-keystone")
+notice('MODULAR:  bigswitch reconfigure-keystone')
 
 # configure /etc/keystone/keystone.conf
-ini_setting { "keystone.conf notification driver":
-    ensure            => present,
-    path              => '/etc/keystone/keystone.conf',
-    section           => 'DEFAULT',
-    key_val_separator => '=',
-    setting           => 'notification_driver',
-    value             => 'messaging',
-    notify            => Service['keystone'],
+ini_setting { 'keystone.conf notification driver':
+  ensure            => present,
+  path              => '/etc/keystone/keystone.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+  notify            => Service['keystone'],
 }
 
 service { 'keystone':
-    ensure  => running,
-    enable  => true,
+  ensure => running,
+  enable => true,
 }
