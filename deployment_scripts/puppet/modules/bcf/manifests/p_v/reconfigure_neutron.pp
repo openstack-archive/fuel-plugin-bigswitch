@@ -13,30 +13,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-class bcf::p_v::controller {
+class bcf::p_v::reconfigure_neutron {
 
+    include bcf
     include bcf::params
+    include bcf::params::openstack
     $binpath = '/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin'
 
     package { 'python-pip':
-        ensure => 'installed',
+      ensure => 'installed',
     }
     exec { 'bsnstacklib':
-        command => 'pip install "bsnstacklib<2015.2"',
-        path    => '/usr/local/bin/:/usr/bin/:/bin',
-        require => Package['python-pip']
-    }
-
-    # uplink mtu
-    file_line { "ifconfig ${name} mtu ${bcf::params::openstack::mtu}":
-      path  => '/etc/rc.local',
-      line  => "ifconfig ${name} mtu ${bcf::params::openstack::mtu}",
-      match => "^ifconfig ${name} mtu ${bcf::params::openstack::mtu}",
-    }
-
-    # make sure known_hosts is cleaned up
-    file { '/root/.ssh/known_hosts':
-        ensure => absent,
+      command => 'pip install "bsnstacklib<2015.2"',
+      path    => '/usr/local/bin/:/usr/bin/:/bin',
+      require => Package['python-pip']
     }
 
     # purge bcf controller public key
@@ -54,6 +44,7 @@ class bcf::p_v::controller {
       key_val_separator => '=',
       setting           => 'report_interval',
       value             => '60',
+      notify            => Service['neutron-server'],
     }
     ini_setting { 'neutron.conf agent_down_time':
       ensure            => present,
@@ -62,6 +53,7 @@ class bcf::p_v::controller {
       key_val_separator => '=',
       setting           => 'agent_down_time',
       value             => '150',
+      notify            => Service['neutron-server'],
     }
     ini_setting { 'neutron.conf service_plugins':
       ensure            => present,
@@ -69,7 +61,7 @@ class bcf::p_v::controller {
       section           => 'DEFAULT',
       key_val_separator => '=',
       setting           => 'service_plugins',
-      value             => 'router',
+      value             => 'bsn_l3',
       notify            => Service['neutron-server'],
     }
     ini_setting { 'neutron.conf dhcp_agents_per_network':
@@ -81,6 +73,15 @@ class bcf::p_v::controller {
       value             => '1',
       notify            => Service['neutron-server'],
     }
+    ini_setting { 'neutron.conf network_scheduler_driver':
+      ensure            => present,
+      path              => '/etc/neutron/neutron.conf',
+      section           => 'DEFAULT',
+      key_val_separator => '=',
+      setting           => 'network_scheduler_driver',
+      value             => 'neutron.scheduler.dhcp_agent_scheduler.WeightScheduler',
+      notify            => Service['neutron-server'],
+    }
     ini_setting { 'neutron.conf notification driver':
       ensure            => present,
       path              => '/etc/neutron/neutron.conf',
@@ -89,17 +90,6 @@ class bcf::p_v::controller {
       setting           => 'notification_driver',
       value             => 'messaging',
       notify            => Service['neutron-server'],
-    }
-
-    # configure /etc/keystone/keystone.conf
-    ini_setting { 'keystone.conf notification driver':
-      ensure            => present,
-      path              => '/etc/keystone/keystone.conf',
-      section           => 'DEFAULT',
-      key_val_separator => '=',
-      setting           => 'notification_driver',
-      value             => 'messaging',
-      notify            => Service['keystone'],
     }
 
     # config /etc/neutron/plugin.ini
@@ -135,13 +125,13 @@ class bcf::p_v::controller {
       setting           => 'enable_metadata_proxy',
       value             => 'False',
     }
-    ini_setting { 'l3 agent external network bridge':
+    ini_setting { 'l3 agent handle_internal_only_routers':
       ensure            => present,
       path              => '/etc/neutron/l3_agent.ini',
       section           => 'DEFAULT',
       key_val_separator => '=',
-      setting           => 'external_network_bridge',
-      value             => '',
+      setting           => 'handle_internal_only_routers',
+      value             => 'True',
     }
 
     # config /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -181,7 +171,7 @@ class bcf::p_v::controller {
       value             => '/etc/neutron/plugins/ml2',
       notify            => Service['neutron-server'],
     }
-    if $bcf::params::openstack::bcf_controller_2 == ''{
+    if $bcf::params::openstack::bcf_controller_2 == ':8000' {
         $server = $bcf::params::openstack::bcf_controller_1
     }
     else {
@@ -287,25 +277,9 @@ class bcf::p_v::controller {
       notify  => Service['neutron-server'],
     }
 
-    # heat-engine, neutron-server, neutron-dhcp-agent and neutron-metadata-agent
-    service { 'heat-engine':
-      ensure => running,
-      enable => true,
-    }
+    # neutron-server, keystone
     service { 'neutron-server':
       ensure => running,
       enable => true,
-    }
-    service { 'keystone':
-      ensure => running,
-      enable => true,
-    }
-    service { 'neutron-dhcp-agent':
-      ensure => stopped,
-      enable => false,
-    }
-    service { 'neutron-metadata-agent':
-      ensure => stopped,
-      enable => false,
     }
 }
