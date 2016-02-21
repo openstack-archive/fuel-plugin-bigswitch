@@ -13,7 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-class bcf::p_v::network {
+notice('MODULAR: bigswitch general-network-config')
+
+class bcf::p_v::general-network-config {
 
     include bcf
     include bcf::params

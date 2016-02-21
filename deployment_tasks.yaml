@@ -3,11 +3,20 @@
 
 - id: lacp-bond
   type: puppet
-  groups: [primary-controller, controller, compute, ceph-osd]
+  groups: [primary-controller, controller, ceph-osd]
   required_for: [openstack-controller, connectivity_tests]
   requires: [netconfig]
   parameters:
-    puppet_manifest: puppet/manifests/network-config.pp
+    puppet_manifest: puppet/manifests/general-network-config.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 720
+- id: compute-lacp-bond
+  type: puppet
+  groups: [compute]
+  required_for: [openstack-controller, connectivity_tests]
+  requires: [netconfig]
+  parameters:
+    puppet_manifest: puppet/manifests/compute-network-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 720
 - id: openstack-cleanup

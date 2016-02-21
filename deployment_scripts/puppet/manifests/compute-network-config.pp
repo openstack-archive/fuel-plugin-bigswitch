@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-notice('MODULAR:  bigswitch network-config')
+notice('MODULAR:  bigswitch compute-network-config')
 include bcf::params
-include bcf::p_only::network
+if $bcf::params::openstack::bcf_mode == 'P-Only' {
+  include bcf::p_only::compute-network-config
+}
