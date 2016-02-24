@@ -24,6 +24,8 @@ class bcf::params::openstack {
   $auth_password         = $quantum_settings['keystone']['admin_password']
   $auth_tenant_name      = 'services'
 
+  $neutron_adv_conf      = hiera('neutron_advanced_configuration')
+  $neutron_dvr           = $neutron_adv_conf['neutron_dvr']
   $network_scheme        = hiera('network_scheme')
   $fuel_master           = hiera('master_ip')
   $bcf_hash              = hiera('fuel-plugin-bigswitch')

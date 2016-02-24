@@ -15,26 +15,24 @@
 #
 notice('MODULAR: bigswitch general-network-config')
 
-class bcf::p_v::general-network-config {
-
-    include bcf
-    include bcf::params
-    $binpath = '/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin'
-    $sys_desc_lacp = '5c:16:c7:00:00:04'
+include bcf
+include bcf::params
+$binpath = '/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin'
+$sys_desc_lacp = '5c:16:c7:00:00:04'
 
     # lldp
-    $a = file('/etc/fuel/plugins/fuel-plugin-bigswitch-1.0/python_scripts/send_lldp', '/dev/null')
-    if($a != '') {
-      file { '/bin/send_lldp':
-        ensure  => file,
-        content => $a,
-        mode    => '0777',
-      }
-    }
+$a = file('/etc/fuel/plugins/fuel-plugin-bigswitch-1.0/python_scripts/send_lldp', '/dev/null')
+if($a != '') {
+  file { '/bin/send_lldp':
+    ensure  => file,
+    content => $a,
+    mode    => '0777',
+  }
+}
 
-    file { '/etc/init/send_lldp.conf':
-      ensure  => file,
-      content => "
+file { '/etc/init/send_lldp.conf':
+  ensure  => file,
+  content => "
 description \"BCF LLDP\"
 start on runlevel [2345]
 stop on runlevel [!2345]
@@ -43,18 +41,17 @@ script
     exec /bin/send_lldp --system-desc ${sys_desc_lacp} --system-name $(uname -n) -i 10 --network_interface ${bcf::itfs}
 end script
 ",
-    }
+ }
 
-    service { 'send_lldp':
-      ensure  => running,
-      enable  => true,
-      require => [File['/bin/send_lldp'], File['/etc/init/send_lldp.conf']],
-    }
+service { 'send_lldp':
+   ensure  => running,
+   enable  => true,
+   require => [File['/bin/send_lldp'], File['/etc/init/send_lldp.conf']],
+}
 
-    # load bonding module
-    file_line {'load bonding on boot':
-      path  => '/etc/modules',
-      line  => 'bonding',
-      match => '^bonding$',
-    }
+# load bonding module
+file_line {'load bonding on boot':
+  path  => '/etc/modules',
+  line  => 'bonding',
+  match => '^bonding$',
 }

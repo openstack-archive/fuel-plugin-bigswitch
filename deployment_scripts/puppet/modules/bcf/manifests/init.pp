@@ -24,7 +24,7 @@ class bcf {
     prepare_network_config($network_scheme)
     $gw = get_default_gateways()
     $phy_devs = get_network_role_property('neutron/private', 'phys_dev')
-    $if_str = "$phy_devs"
+    $if_str = "${phy_devs}"
     if $if_str =~ /^bond.*/ {
         $ifaces = join($phy_devs, ',')
         $bond = true

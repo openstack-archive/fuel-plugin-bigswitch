@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-class bcf::p_only::compute-network-config {
+class bcf::p_only::compute_network_config {
 
     include bcf
     include bcf::params

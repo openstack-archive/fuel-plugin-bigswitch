@@ -170,4 +170,41 @@ class bcf::p_only::compute {
       value             => "${novnc_protocol}://${bcf::public_vip}:6080/vnc_auto.html",
       notify            => Service['nova-compute']
     }
+
+    if $bcf::params::openstack::neutron_dvr {
+      notice('MODULAR: bigswitch bcf::p_only::compute, dvr')
+      service { 'neutron-l3-agent':
+        ensure => running,
+        enable => true,
+      }
+
+      # config /etc/neutron/l3-agent.ini
+      ini_setting { 'l3 agent disable metadata proxy':
+        ensure            => present,
+        path              => '/etc/neutron/l3_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'enable_metadata_proxy',
+        value             => 'False',
+        notify            => Service['neutron-l3-agent'],
+      }
+      ini_setting { 'l3 agent external network bridge':
+        ensure            => present,
+        path              => '/etc/neutron/l3_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'external_network_bridge',
+        value             => '',
+        notify            => Service['neutron-l3-agent'],
+      }
+      ini_setting { 'l3 agent handle_internal_only_routers':
+        ensure            => present,
+        path              => '/etc/neutron/l3_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'handle_internal_only_routers',
+        value             => 'True',
+        notify            => Service['neutron-l3-agent'],
+      }
+    }
 }

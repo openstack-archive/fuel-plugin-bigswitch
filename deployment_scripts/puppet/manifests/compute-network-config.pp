@@ -16,5 +16,5 @@
 notice('MODULAR:  bigswitch compute-network-config')
 include bcf::params
 if $bcf::params::openstack::bcf_mode == 'P-Only' {
-  include bcf::p_only::compute-network-config
+  include bcf::p_only::compute_network_config
 }
