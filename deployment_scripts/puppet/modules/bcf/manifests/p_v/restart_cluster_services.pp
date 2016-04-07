@@ -35,8 +35,12 @@ class bcf::p_v::restart_cluster_services {
             command => 'crm resource stop p_neutron-l3-agent',
             path    => '/usr/local/bin/:/bin/:/usr/sbin',
         } ->
+        exec { 'clean up neutron-l3-agent':
+            command => 'crm resource cleanup p_neutron-l3-agent',
+            path    => '/usr/local/bin/:/bin/:/usr/sbin',
+        } ->
         exec { 'disable neutron-l3-agent':
-            command => 'crm resource disable p_neutron-l3-agent',
+            command => 'crm configure delete p_neutron-l3-agent',
             path    => '/usr/local/bin/:/bin/:/usr/sbin',
         } ->
         exec { 'restart neutron-plugin-openvswitch-agent':

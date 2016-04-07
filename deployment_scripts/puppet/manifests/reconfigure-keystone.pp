@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-notice('MODULAR:  bigswitch reconfigure-keystone')
+notice('MODULAR: bigswitch reconfigure-keystone')
 
 # configure /etc/keystone/keystone.conf
 ini_setting { 'keystone.conf notification driver':

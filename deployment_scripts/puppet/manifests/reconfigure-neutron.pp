@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-notice('MODULAR:  bigswitch reconfigure-neutron')
+notice('MODULAR: bigswitch reconfigure-neutron')
 include bcf::params
 if $bcf::params::openstack::bcf_mode == 'P-Only' {
   include bcf::p_only::reconfigure_neutron
