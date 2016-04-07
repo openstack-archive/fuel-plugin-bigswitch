@@ -13,10 +13,82 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+notice('MODULAR: bigswitch p_v compute')
 class bcf::p_v::compute {
 
     include bcf
     include bcf::params
+    include bcf::params::openstack
+
+    $interfaces_dict = $bcf::network_scheme['interfaces']
+    notice("bigswitch interfaces_dict ${interfaces_dict}")
+    $bridge_ips = {}
+    $bridge_ips['br-aux'] = 'none'
+    $ivs_internal_ports = {}
+
+    $mgmt_ip = $bcf::existing_bridges['br-fw-admin']['IP']
+    if has_key($bcf::existing_bridges, 'br-storage') {
+        $bridge_ips['br-storage'] = $bcf::existing_bridges['br-storage']['IP']
+        $ivs_internal_ports['br-storage'] = "s${bcf::deployment_id}"
+    }
+
+    if has_key($bcf::existing_bridges, 'br-prv') {
+        $bridge_ips['br-prv'] = $bcf::existing_bridges['br-prv']['IP']
+    }
+
+    if has_key($bcf::existing_bridges, 'br-mgmt') {
+        $bridge_ips['br-mgmt'] = $bcf::existing_bridges['br-mgmt']['IP']
+        $ivs_internal_ports['br-mgmt'] = "m${bcf::deployment_id}"
+    }
+
+    if has_key($bcf::existing_bridges, 'br-ex') {
+        $bridge_ips['br-ex'] = $bcf::existing_bridges['br-ex']['IP']
+        $ivs_internal_ports['br-ex'] = "e${bcf::deployment_id}"
+    }
+
+    $bridge_list = split(inline_template("<%= @bridge_ips.keys.join(',') %>", ','))
+    $interfaces = split(inline_template("<%= @interfaces_dict.keys.join(',') %>", ','))
+    $internal_port_str = inline_template("<%= @ivs_internal_ports.values.join(' --internal-port=') %>")
+    $ivs_uplink_str = regsubst($bcf::itfs, ',', ' -u ', 'G')
+
+    notice("bigswitch bond_name ${bcf::bond_name}")
+    notice("bigswitch interfaces ${interfaces}")
+    # Install the cleanup script
+    file { '/etc/bigswitch':
+      ensure => 'directory',
+    }
+    file { '/etc/bigswitch/bridge-cleanup.sh':
+      ensure => 'file',
+      source => 'puppet:///modules/bcf/p_v/bridge-cleanup.sh',
+      require => File['/etc/bigswitch']
+    }
+    exec { 'clean up ovs bridges':
+      command => "bash /etc/bigswitch/bridge-cleanup.sh ${bridge_list} ${bcf::bond_name}",
+      path    => '/usr/local/bin/:/usr/bin/:/bin',
+      require => File['/etc/bigswitch/bridge-cleanup.sh']
+    }
+    file { '/etc/bigswitch/ivs-setup.sh':
+      ensure => 'file',
+      source => 'puppet:///modules/bcf/p_v/ivs-setup.sh',
+      require => EXEC['clean up ovs bridges']
+    }
+    exec { 'set up ivs':
+      command => "bash /etc/bigswitch/ivs-setup.sh ${bcf::mgmt_itf} ${mgmt_ip} ${bcf::itfs} ${interfaces} \'${bridge_ips}\' ${bcf::deployment_id}",
+      path    => '/usr/local/bin/:/usr/bin/:/bin',
+      require => File['/etc/bigswitch/ivs-setup.sh']
+    }
+    file { '/etc/default/ivs':
+      ensure  => file,
+      mode    => 0644,
+      content => "DAEMON_ARGS=\"--hitless --inband-vlan 4092 -u ${ivs_uplink_str} --internal-port=${internal_port_str}\"",
+      require => Exec['set up ivs'],
+      notify  => Service['ivs'],
+    }
+
+    service { 'ivs':
+        ensure => running,
+        enable => true,
+    }
 
     # edit rc.local for cron job and default gw
     file { '/etc/rc.local':
@@ -59,7 +131,7 @@ class bcf::p_v::compute {
       key_val_separator => '=',
       setting           => 'report_interval',
       value             => '60',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
+      notify            => Service['neutron-bsn-agent'],
     }
     ini_setting { 'neutron.conf agent_down_time':
       ensure            => present,
@@ -68,7 +140,7 @@ class bcf::p_v::compute {
       key_val_separator => '=',
       setting           => 'agent_down_time',
       value             => '150',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
+      notify            => Service['neutron-bsn-agent'],
     }
     ini_setting { 'neutron.conf service_plugins':
       ensure            => present,
@@ -77,7 +149,7 @@ class bcf::p_v::compute {
       key_val_separator => '=',
       setting           => 'service_plugins',
       value             => 'router',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
+      notify            => Service['neutron-bsn-agent'],
     }
     ini_setting { 'neutron.conf dhcp_agents_per_network':
       ensure            => present,
@@ -86,7 +158,7 @@ class bcf::p_v::compute {
       key_val_separator => '=',
       setting           => 'dhcp_agents_per_network',
       value             => '1',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
+      notify            => Service['neutron-bsn-agent'],
     }
     ini_setting { 'neutron.conf notification driver':
       ensure            => present,
@@ -95,7 +167,7 @@ class bcf::p_v::compute {
       key_val_separator => '=',
       setting           => 'notification_driver',
       value             => 'messaging',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
+      notify            => Service['neutron-bsn-agent'],
     }
 
     # set the correct properties in ml2_conf.ini on compute as well
@@ -107,7 +179,7 @@ class bcf::p_v::compute {
       key_val_separator => '=',
       setting           => 'type_drivers',
       value             => 'vlan',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
+      notify            => Service['neutron-bsn-agent'],
     }
     ini_setting { 'ml2 tenant network types':
       ensure            => present,
@@ -116,7 +188,7 @@ class bcf::p_v::compute {
       key_val_separator => '=',
       setting           => 'tenant_network_types',
       value             => 'vlan',
-      notify            => Service['neutron-plugin-openvswitch-agent'],
+      notify            => Service['neutron-bsn-agent'],
     }
 
     # change ml2 ownership
@@ -124,26 +196,55 @@ class bcf::p_v::compute {
       owner   => neutron,
       group   => neutron,
       recurse => true,
-      notify  => Service['neutron-plugin-openvswitch-agent'],
+      notify  => Service['neutron-bsn-agent'],
     }
 
-    # ensure neutron-plugin-openvswitch-agent is running
-    file { '/etc/init/neutron-plugin-openvswitch-agent.conf':
-      ensure => file,
-      mode   => '0644',
+    # config neutron-bsn-agent conf
+    file { '/etc/init/neutron-bsn-agent.conf':
+      ensure => present,
+      content => "
+description \"Neutron BSN Agent\"
+start on runlevel [2345]
+stop on runlevel [!2345]
+respawn
+script
+    exec /usr/local/bin/neutron-bsn-agent --config-file=/etc/neutron/neutron.conf --config-dir /etc/neutron/conf.d/common --log-file=/var/log/neutron/neutron-bsn-agent.log
+end script
+",
     }
-    service { 'neutron-plugin-openvswitch-agent':
+    file { '/etc/init.d/neutron-bsn-agent':
+      ensure => link,
+      target => '/lib/init/upstart-job',
+      notify => Service['neutron-bsn-agent'],
+    }
+
+    service {'neutron-bsn-agent':
       ensure     => 'running',
-      enable     => true,
       provider   => 'upstart',
-      hasrestart => true,
-      hasstatus  => true,
-      subscribe  => [File['/etc/init/neutron-plugin-openvswitch-agent.conf']],
+      hasrestart => 'true',
+      hasstatus  => 'true',
+      subscribe  => [File['/etc/init/neutron-bsn-agent.conf'], File['/etc/init.d/neutron-bsn-agent']],
     }
 
+    # stop and disable neutron-plugin-openvswitch-agent
+    #service { 'neutron-plugin-openvswitch-agent':
+    #  ensure   => 'stopped',
+    #  enable   => false,
+    #  provider => 'upstart',
+    #}
+
+    # disable l3 agent
+    ini_setting { "l3 agent disable metadata proxy":
+      ensure            => present,
+      path              => '/etc/neutron/l3_agent.ini',
+      section           => 'DEFAULT',
+      key_val_separator => '=',
+      setting           => 'enable_metadata_proxy',
+      value             => 'False',
+    }
     file { '/etc/neutron/dnsmasq-neutron.conf':
-      ensure  => file,
-      content => 'dhcp-option-force=26,1400',
+      ensure            => file,
+      content           => 'dhcp-option-force=26,1400',
     }
 
     service { 'nova-compute':
