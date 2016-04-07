@@ -57,3 +57,10 @@ attributes:
     description: "The Openstack instance ID that is unique within the BCF fabric"
     weight: 30
     type: "text"
+
+  openstack_mgmt_tenant:
+    value: ""
+    label: "Management Tenant"
+    description: "The BCF Management Tenant"
+    weight: 40
+    type: "text"
