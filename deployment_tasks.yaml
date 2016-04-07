@@ -68,7 +68,7 @@
   type: puppet
   role: [compute]
   required_for: [post_deployment_end]
-  requires: [restart-cluster-services]
+  requires: [restart-cluster-services, configure_default_route]
   parameters:
     puppet_manifest: puppet/manifests/compute-config.pp
     puppet_modules: puppet/modules:/etc/puppet/modules

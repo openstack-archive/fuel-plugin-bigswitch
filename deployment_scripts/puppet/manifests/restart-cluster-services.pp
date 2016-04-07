@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-notice('MODULAR:  bigswitch restart-cluster-services')
+notice('MODULAR: bigswitch restart-cluster-services')
 include bcf::params
 if $bcf::params::openstack::bcf_mode == 'P-Only' {
   include bcf::p_only::restart_cluster_services

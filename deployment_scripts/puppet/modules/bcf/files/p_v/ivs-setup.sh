@@ -1,0 +1,138 @@
+#!/bin/bash
+
+if [ "$#" -ne 6 ]; then
+  echo "Usage: $0 <management interface> <management ip> <uplinks> <all used interfaces> <bridges' ip>" >&2
+  exit 1
+fi
+
+mgmt_itf=$1
+IFS='/'
+declare -a mgmt_ip_attr=($2)
+mgmt_ip=${mgmt_ip_attr[0]}
+IFS=','
+declare -a uplinks=($3)
+declare -a interfaces=($4)
+IFS='{}'
+read -ra array1 <<< $5
+deployment_id=$6
+
+cdr2mask ()
+{
+   # Number of args to shift, 255..255, first non-255 byte, zeroes
+   set -- $(( 5 - ($1 / 8) )) 255 255 255 255 $(( (255 << (8 - ($1 % 8))) & 255 )) 0 0 0
+   [ $1 -gt 1 ] && shift $1 || shift
+   echo ${1-0}.${2-0}.${3-0}.${4-0}
+}
+
+# install ivs
+dpkg --force-all -i /etc/fuel/plugins/fuel-plugin-bigswitch-1.0/ivs_packages/ubuntu/ivs_3.5.0_amd64.deb
+dpkg --force-all -i /etc/fuel/plugins/fuel-plugin-bigswitch-1.0/ivs_packages/ubuntu/ivs-dbg_3.5.0_amd64.deb
+apt-get install -y libnl-genl-3-200
+apt-get -f install -y
+apt-get install -y apport
+
+# full installation
+if [[ -f /etc/init/neutron-plugin-openvswitch-agent.override ]]; then
+    cp /etc/init/neutron-plugin-openvswitch-agent.override /etc/init/neutron-bsn-agent.override
+fi
+
+echo '' > /etc/network/interfaces
+
+# Process input arguments
+IFS=','
+declare -a array2=(${array1[0]})
+#IFS='=>'
+len=${#array2[@]}
+for (( i=0; i<$len; i++ )); do
+    # entry = "br-storage"=>["192.168.1.3/24"]
+    entry=${array2[$i]}
+    IFS='=>'
+    declare -a bridge_ip=(${entry})
+    key=$(echo "${bridge_ip[0]}" | sed -e 's/"//' -e 's/"//')
+    itf_ip=$(echo "${bridge_ip[2]}" | sed -e 's/\[//'  -e 's/"//' -e 's/"//' -e 's/]//')
+    IFS='/'
+    declare -a ip_address=(${itf_ip})
+    netmask=$( cdr2mask ${ip_address[1]} )
+    internal_interface=""
+    if [[ "$key" =~ "br-storage" ]]; then
+        internal_interface="s${deployment_id}"
+    elif [[ "$key" =~ "br-mgmt" ]]; then
+        internal_interface="m${deployment_id}"
+    elif [[ "$key" =~ "br-ex" ]]; then
+        internal_interface="e${deployment_id}"
+    fi
+
+    if [[ "$internal_interface" =~ "$deployment_id" ]]; then
+        echo -e 'auto' ${internal_interface} >> /etc/network/interfaces
+        echo -e 'iface' ${internal_interface} 'inet manual' >> /etc/network/interfaces
+        if [[ ! -z ${netmask} ]]; then
+            echo -e '  address' ${ip_address[0]} >> /etc/network/interfaces
+            echo -e '  netmask' ${netmask} >> /etc/network/interfaces
+
+            ifconfig $internal_interface up
+            ip link set $internal_interface up
+            ifconfig $internal_interface ${ip_address[0]} netmask ${netmask}
+        fi
+        echo -e '\n' >> /etc/network/interfaces
+
+    fi
+done
+
+# /etc/network/interfaces
+len=${#interfaces[@]}
+for (( i=0; i<$len; i++ )); do
+    echo -e 'auto' ${interfaces[$i]} >> /etc/network/interfaces
+    echo -e 'iface' ${interfaces[$i]} 'inet manual' >> /etc/network/interfaces
+    echo -e '\n' >> /etc/network/interfaces
+done
+echo -e 'auto br_fw_admin' >> /etc/network/interfaces
+echo -e 'iface br_fw_admin inet static' >> /etc/network/interfaces
+echo -e '  bridge_ports' ${mgmt_itf} >> /etc/network/interfaces
+echo -e '  address' ${mgmt_ip} >> /etc/network/interfaces
+echo -e '\n' >> /etc/network/interfaces
+
+exit 0
+
+#reset uplinks to move them out of bond
+len=${#uplinks[@]}
+for (( i=0; i<$len; i++ )); do
+    ip link set ${uplinks[$i]} down
+done
+sleep 2
+for (( i=0; i<$len; i++ )); do
+    ip link set ${uplinks[$i]} up
+done
+
+# assign ip to ivs internal ports
+#bash /etc/rc.local
+
+echo 'Restart openstack-nova-compute and neutron-bsn-agent'
+service nova-compute restart
+service neutron-bsn-agent restart
+
+set +e
+
+# Make sure only root can run this script
+if [[ "$(id -u)" != "0" ]]; then
+   echo -e "Please run as root"
+   exit 1
+fi
+
+apt-get install ubuntu-cloud-keyring
+apt-get update -y
+apt-get install -y linux-headers-$(uname -r) build-essential
+apt-get install -y python-dev python-setuptools
+apt-get install -y puppet dpkg
+apt-get install -y vlan ethtool
+apt-get install -y libssl-dev libffi6 libffi-dev
+apt-get install -y libnl-genl-3-200
+apt-get -f install -y
+apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y neutron-common
+easy_install pip
+puppet module install --force puppetlabs-inifile
+puppet module install --force puppetlabs-stdlib
+
+set -e
+
+exit 0
+

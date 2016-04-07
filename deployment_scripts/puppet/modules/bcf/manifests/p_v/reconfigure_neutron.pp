@@ -125,14 +125,6 @@ class bcf::p_v::reconfigure_neutron {
       setting           => 'enable_metadata_proxy',
       value             => 'False',
     }
-    ini_setting { 'l3 agent handle_internal_only_routers':
-      ensure            => present,
-      path              => '/etc/neutron/l3_agent.ini',
-      section           => 'DEFAULT',
-      key_val_separator => '=',
-      setting           => 'handle_internal_only_routers',
-      value             => 'True',
-    }
 
     # config /etc/neutron/plugins/ml2/ml2_conf.ini
     ini_setting { 'ml2 type dirvers':
@@ -159,7 +151,7 @@ class bcf::p_v::reconfigure_neutron {
       section           => 'ml2',
       key_val_separator => '=',
       setting           => 'mechanism_drivers',
-      value             => 'openvswitch,bsn_ml2',
+      value             => 'bsn_ml2',
       notify            => Service['neutron-server'],
     }
     ini_setting { 'ml2 restproxy ssl cert directory':
@@ -171,11 +163,13 @@ class bcf::p_v::reconfigure_neutron {
       value             => '/etc/neutron/plugins/ml2',
       notify            => Service['neutron-server'],
     }
-    if $bcf::params::openstack::bcf_controller_2 == ':8000' {
-        $server = $bcf::params::openstack::bcf_controller_1
+    if $bcf::params::openstack::bcf_controller_2 == '' {
+        $server = "${bcf::params::openstack::bcf_controller_1}:8000"
+        $rest_server = "${bcf::params::openstack::bcf_controller_1}"
     }
     else {
-        $server = "${bcf::params::openstack::bcf_controller_1},${bcf::params::openstack::bcf_controller_2}"
+        $server = "${bcf::params::openstack::bcf_controller_1}:8000,${bcf::params::openstack::bcf_controller_2}:8000"
+        $rest_server = "${bcf::params::openstack::bcf_controller_1},${bcf::params::openstack::bcf_controller_2}"
     }
 
     ini_setting { 'ml2 restproxy servers':
@@ -281,5 +275,15 @@ class bcf::p_v::reconfigure_neutron {
     service { 'neutron-server':
       ensure => running,
       enable => true,
+    }
+
+    file { '/etc/bigswitch/bcf_rest_client.py':
+      ensure  => 'file',
+      source  => 'puppet:///modules/bcf/p_v/bcf_rest_client.py',
+    }
+    exec { 'Openstack segment membership':
+      command => "python /etc/bigswitch/bcf_rest_client.py -u ${bcf::params::openstack::bcf_username} -p ${bcf::params::openstack::bcf_password} -c ${rest_server} -m ${bcf::params::openstack::bcf_os_mgmt_tenant} -f ${bcf::params::openstack::deployment_id}",
+      path    => '/usr/local/bin/:/usr/bin/:/bin',
+      require => FILE['/etc/bigswitch/bcf_rest_client.py']
     }
 }
