@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ "$#" -ne 6 ]; then
-  echo "Usage: $0 <management interface> <management ip> <uplinks> <all used interfaces> <bridges' ip>" >&2
+if [ "$#" -ne 7 ]; then
+  echo "Usage: $0 <management interface> <management ip> <uplinks> <all used interfaces> <bridges' ip> <fuel_deployment_id> <bcf_version>" >&2
   exit 1
 fi
 
@@ -15,6 +15,7 @@ declare -a interfaces=($4)
 IFS='{}'
 read -ra array1 <<< $5
 deployment_id=$6
+bcf_version=$7
 
 cdr2mask ()
 {
@@ -25,10 +26,10 @@ cdr2mask ()
 }
 
 # install ivs
-dpkg --force-all -i /etc/fuel/plugins/fuel-plugin-bigswitch-1.0/ivs_packages/ubuntu/ivs_3.5.0_amd64.deb
-dpkg --force-all -i /etc/fuel/plugins/fuel-plugin-bigswitch-1.0/ivs_packages/ubuntu/ivs-dbg_3.5.0_amd64.deb
 apt-get install -y libnl-genl-3-200
 apt-get -f install -y
+dpkg --force-all -i "/etc/fuel/plugins/fuel-plugin-bigswitch-1.0/ivs_packages/ubuntu/ivs_${bcf_version}_amd64.deb"
+dpkg --force-all -i "/etc/fuel/plugins/fuel-plugin-bigswitch-1.0/ivs_packages/ubuntu/ivs-dbg_${bcf_version}_amd64.deb"
 apt-get install -y apport
 
 # full installation
@@ -49,17 +50,20 @@ for (( i=0; i<$len; i++ )); do
     IFS='=>'
     declare -a bridge_ip=(${entry})
     key=$(echo "${bridge_ip[0]}" | sed -e 's/"//' -e 's/"//')
-    itf_ip=$(echo "${bridge_ip[2]}" | sed -e 's/\[//'  -e 's/"//' -e 's/"//' -e 's/]//')
-    IFS='/'
-    declare -a ip_address=(${itf_ip})
-    netmask=$( cdr2mask ${ip_address[1]} )
+    netmask=""
+    if [[ "$key" =~ "br-storage" ]] || [[ "$key" =~ "br-mgmt" ]]; then
+        itf_ip=$(echo "${bridge_ip[2]}" | sed -e 's/\[//'  -e 's/"//' -e 's/"//' -e 's/]//')
+        IFS='/'
+        declare -a ip_address=(${itf_ip})
+        netmask=$( cdr2mask ${ip_address[1]} )
+    fi
     internal_interface=""
     if [[ "$key" =~ "br-storage" ]]; then
-        internal_interface="s${deployment_id}"
+        internal_interface="sto${deployment_id}"
     elif [[ "$key" =~ "br-mgmt" ]]; then
-        internal_interface="m${deployment_id}"
+        internal_interface="mgm${deployment_id}"
     elif [[ "$key" =~ "br-ex" ]]; then
-        internal_interface="e${deployment_id}"
+        internal_interface="ex${deployment_id}"
     fi
 
     if [[ "$internal_interface" =~ "$deployment_id" ]]; then
@@ -71,7 +75,8 @@ for (( i=0; i<$len; i++ )); do
 
             ifconfig $internal_interface up
             ip link set $internal_interface up
-            ifconfig $internal_interface ${ip_address[0]} netmask ${netmask}
+            ifconfig $internal_interface ${ip_address[0]}
+            ifconfig $internal_interface netmask ${netmask}
         fi
         echo -e '\n' >> /etc/network/interfaces
 

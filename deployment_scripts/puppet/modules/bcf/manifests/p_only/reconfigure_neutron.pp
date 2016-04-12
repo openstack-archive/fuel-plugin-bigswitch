@@ -179,11 +179,11 @@ class bcf::p_only::reconfigure_neutron {
       value             => '/etc/neutron/plugins/ml2',
       notify            => Service['neutron-server'],
     }
-    if $bcf::params::openstack::bcf_controller_2 == ':8000' {
-        $server = $bcf::params::openstack::bcf_controller_1
+    if $bcf::params::openstack::bcf_controller_2 == '' {
+        $server = "${bcf::params::openstack::bcf_controller_1}:8000"
     }
     else {
-        $server = "${bcf::params::openstack::bcf_controller_1},${bcf::params::openstack::bcf_controller_2}"
+        $server = "${bcf::params::openstack::bcf_controller_1}:8000,${bcf::params::openstack::bcf_controller_2}:8000"
     }
 
     ini_setting { 'ml2 restproxy servers':

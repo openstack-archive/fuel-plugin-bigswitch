@@ -282,7 +282,7 @@ class bcf::p_v::reconfigure_neutron {
       source  => 'puppet:///modules/bcf/p_v/bcf_rest_client.py',
     }
     exec { 'Openstack segment membership':
-      command => "python /etc/bigswitch/bcf_rest_client.py -u ${bcf::params::openstack::bcf_username} -p ${bcf::params::openstack::bcf_password} -c ${rest_server} -m ${bcf::params::openstack::bcf_os_mgmt_tenant} -f ${bcf::params::openstack::deployment_id}",
+      command => "python /etc/bigswitch/bcf_rest_client.py -u ${bcf::params::openstack::bcf_username} -p ${bcf::params::openstack::bcf_password} -c ${rest_server} -m ${bcf::params::openstack::bcf_os_mgmt_tenant} -f ${bcf::deployment_id} -b ${bcf::params::openstack::bcf_version}",
       path    => '/usr/local/bin/:/usr/bin/:/bin',
       require => FILE['/etc/bigswitch/bcf_rest_client.py']
     }

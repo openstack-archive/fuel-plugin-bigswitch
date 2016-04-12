@@ -20,7 +20,7 @@ attributes:
   bcf_controller_1:
     value: ""
     label: "BCF Controller1"
-    description: "BCF Controller' IP address"
+    description: "BCF Controller' IP address."
     weight: 10
     type: "text"
     regex:
@@ -30,7 +30,7 @@ attributes:
   bcf_controller_2:
     value: ""
     label: "BCF Controller2"
-    description: "The second BCF Controller' IP address"
+    description: "The second BCF Controller' IP address."
     weight: 11
     type: "text"
     regex:
@@ -40,27 +40,39 @@ attributes:
   bcf_controller_username:
     value: ""
     label: "BCF Controller Username"
-    description: "Username to access BCF controllers"
+    description: "Username to access BCF controllers."
     weight: 20
     type: "text"
 
   bcf_controller_password:
     value: ""
     label: "BCF Controller Password"
-    description: "Password to access BCF controllers"
+    description: "Password to access BCF controllers."
     weight: 21
     type: "password"
 
   openstack_instance_id:
     value: ""
     label: "Openstack Instance ID"
-    description: "The Openstack instance ID that is unique within the BCF fabric"
+    description: "The Openstack instance ID that is unique within the BCF fabric."
     weight: 30
     type: "text"
 
   openstack_mgmt_tenant:
     value: ""
     label: "Management Tenant"
-    description: "The BCF Management Tenant"
+    description: "The BCF Management Tenant. Not needed in P_Only mode."
     weight: 40
     type: "text"
+
+  bcf_version:
+    type: "select"
+    weight: 50
+    value: "3.5.0"
+    label: "BCF Fabric Version"
+    description: "The plugin supports BCF 3.5.0 or 3.6.0 release. Not needed in P_Only mode."
+    values:
+      - data: "3.5.0"
+        label: "3.5.0"
+      - data: "3.6.0"
+        label: "3.6.0"
