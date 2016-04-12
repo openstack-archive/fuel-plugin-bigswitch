@@ -29,7 +29,7 @@ class bcf::p_v::compute {
     $mgmt_ip = $bcf::existing_bridges['br-fw-admin']['IP']
     if has_key($bcf::existing_bridges, 'br-storage') {
         $bridge_ips['br-storage'] = $bcf::existing_bridges['br-storage']['IP']
-        $ivs_internal_ports['br-storage'] = "s${bcf::deployment_id}"
+        $ivs_internal_ports['br-storage'] = "sto${bcf::deployment_id}"
     }
 
     if has_key($bcf::existing_bridges, 'br-prv') {
@@ -38,12 +38,12 @@ class bcf::p_v::compute {
 
     if has_key($bcf::existing_bridges, 'br-mgmt') {
         $bridge_ips['br-mgmt'] = $bcf::existing_bridges['br-mgmt']['IP']
-        $ivs_internal_ports['br-mgmt'] = "m${bcf::deployment_id}"
+        $ivs_internal_ports['br-mgmt'] = "mgm${bcf::deployment_id}"
     }
 
     if has_key($bcf::existing_bridges, 'br-ex') {
         $bridge_ips['br-ex'] = $bcf::existing_bridges['br-ex']['IP']
-        $ivs_internal_ports['br-ex'] = "e${bcf::deployment_id}"
+        $ivs_internal_ports['br-ex'] = "ex${bcf::deployment_id}"
     }
 
     $bridge_list = split(inline_template("<%= @bridge_ips.keys.join(',') %>", ','))
@@ -54,8 +54,31 @@ class bcf::p_v::compute {
     notice("bigswitch bond_name ${bcf::bond_name}")
     notice("bigswitch interfaces ${interfaces}")
 
+    # Install rootwrap filter
+    file { '/etc/neutron/rootwrap.d/network.filters':
+      ensure  => 'file',
+      source  => 'puppet:///modules/bcf/rootwrap/network.filters',
+    }
+    file { '/etc/neutron/rootwrap.d/api-metadata.filters':
+      ensure  => 'file',
+      source  => 'puppet:///modules/bcf/rootwrap/api-metadata.filters',
+    }
+    file { '/etc/neutron/rootwrap.d/baremetal-deploy-helper.filters':
+      ensure  => 'file',
+      source  => 'puppet:///modules/bcf/rootwrap/baremetal-deploy-helper.filters',
+    }
+    file { '/etc/neutron/rootwrap.d/baremetal-compute-ipmi.filters':
+      ensure  => 'file',
+      source  => 'puppet:///modules/bcf/rootwrap/baremetal-compute-ipmi.filters',
+    }
+    file { '/etc/neutron/rootwrap.d/compute.filters':
+      ensure  => 'file',
+      source  => 'puppet:///modules/bcf/rootwrap/compute.filters',
+    }
+
     package { 'python-pip':
       ensure => 'installed',
+      require => File['/etc/neutron/rootwrap.d/network.filters']
     }
     exec { 'bsnstacklib':
       command => 'pip install "bsnstacklib<2015.2"',
@@ -219,7 +242,7 @@ start on runlevel [2345]
 stop on runlevel [!2345]
 respawn
 script
-    exec /usr/local/bin/neutron-bsn-agent --config-file=/etc/neutron/neutron.conf --config-dir /etc/neutron/conf.d/common --log-file=/var/log/neutron/neutron-bsn-agent.log
+    exec /usr/local/bin/neutron-bsn-agent --config-file=/etc/neutron/neutron.conf --config-file=/etc/neutron/plugin.ini --log-file=/var/log/neutron/neutron-bsn-agent.log
 end script
 ",
     }

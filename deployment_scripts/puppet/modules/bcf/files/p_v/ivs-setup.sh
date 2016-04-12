@@ -55,11 +55,11 @@ for (( i=0; i<$len; i++ )); do
     netmask=$( cdr2mask ${ip_address[1]} )
     internal_interface=""
     if [[ "$key" =~ "br-storage" ]]; then
-        internal_interface="s${deployment_id}"
+        internal_interface="sto${deployment_id}"
     elif [[ "$key" =~ "br-mgmt" ]]; then
-        internal_interface="m${deployment_id}"
+        internal_interface="mgm${deployment_id}"
     elif [[ "$key" =~ "br-ex" ]]; then
-        internal_interface="e${deployment_id}"
+        internal_interface="ex${deployment_id}"
     fi
 
     if [[ "$internal_interface" =~ "$deployment_id" ]]; then
@@ -71,7 +71,8 @@ for (( i=0; i<$len; i++ )); do
 
             ifconfig $internal_interface up
             ip link set $internal_interface up
-            ifconfig $internal_interface ${ip_address[0]} netmask ${netmask}
+            ifconfig $internal_interface ${ip_address[0]}
+            ifconfig $internal_interface netmask ${netmask}
         fi
         echo -e '\n' >> /etc/network/interfaces
 
