@@ -98,7 +98,7 @@ class bcf::p_v::compute {
     }
     exec { 'clean up ovs bridges':
       command   => "bash /etc/bigswitch/bridge-cleanup.sh ${bridge_list} ${bcf::bond_name}",
-      path      => '/sbin:/usr/local/bin/:/usr/bin/:/bin',
+      path      => '/sbin:/usr/sbin/:/usr/local/bin/:/usr/bin/:/bin',
       logoutput => true,
       require   => File['/etc/bigswitch/bridge-cleanup.sh']
     }
@@ -109,7 +109,7 @@ class bcf::p_v::compute {
     }
     exec { 'set up ivs':
       command   => "bash /etc/bigswitch/ivs-setup.sh ${bcf::mgmt_itf} ${mgmt_ip} ${bcf::itfs} ${interfaces} \'${bridge_ips}\' ${bcf::deployment_id} ${bcf::params::openstack::bcf_version}",
-      path      => '/sbin:/usr/local/bin/:/usr/bin/:/bin',
+      path      => '/sbin:/usr/sbin/:/usr/local/bin/:/usr/bin/:/bin',
       logoutput => true,
       require   => File['/etc/bigswitch/ivs-setup.sh']
     }

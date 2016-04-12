@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 if [ "$#" -ne 7 ]; then
   echo "Usage: $0 <management interface> <management ip> <uplinks> <all used interfaces> <bridges' ip> <fuel_deployment_id> <bcf_version>" >&2
