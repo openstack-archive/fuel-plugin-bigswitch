@@ -18,7 +18,6 @@ class bcf::params::openstack {
   $virtual_cluster_name  = 'OpenStackCluster'
   $ceph_virtual_cluster_name  = 'CephCluster'
 
-  $deployment_id         = hiera('deployment_id')
   $quantum_settings      = hiera('quantum_settings')
   $keystone_vip          = hiera('management_vip')
   $auth_user             = 'neutron'
@@ -45,5 +44,6 @@ class bcf::params::openstack {
   $bcf_password          = $bcf_hash['bcf_controller_password']
   $bcf_instance_id       = $bcf_hash['openstack_instance_id']
   $bcf_os_mgmt_tenant    = $bcf_hash['openstack_mgmt_tenant']
+  $bcf_version           = $bcf_hash['bcf_version']
   $access_tenant         = 'services'
 }

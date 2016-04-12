@@ -202,7 +202,7 @@ class RestLib(object):
     @debug_func(log_return=True)
     def program_segment_and_membership_rule(
         server, cookie, tenant, segment, internal_port, vlan,
-        port=BCF_CONTROLLER_PORT):
+        bcf_version, port=BCF_CONTROLLER_PORT):
 
         existing_segments = RestLib.get_os_mgmt_segments(
             server, cookie, tenant, port)
@@ -247,10 +247,18 @@ class RestLib(object):
 
         pg_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
                        '''segment[name="%(segment)s"]/'''
-                       '''interface-group-membership-rule''' %
+                       '''port-group-membership-rule''' %
                        {'tenant': tenant,
                         'segment': segment})
-        rule_data = {"interface-group": ANY, "vlan": vlan}
+        rule_data = {"port-group": ANY, "vlan": vlan}
+        if "3.6" in bcf_version:
+            pg_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
+                           '''segment[name="%(segment)s"]/'''
+                           '''interface-group-membership-rule''' %
+                           {'tenant': tenant,
+                            'segment': segment})
+            rule_data = {"interface-group": ANY, "vlan": vlan}
+
         try:
             ret = RestLib.post(cookie, pg_rule_url, server, port,
                                json.dumps(rule_data))
@@ -293,6 +301,8 @@ if __name__ == '__main__':
                         help="Openstack management tenant.")
     parser.add_argument("-f", "--fuel-cluster-id", required=True,
                         help="The custer id of the fuel environment")
+    parser.add_argument("-b", "--bcf-version", required=True,
+                        help="The BCF version")
     args = parser.parse_args()
 
     ctrls = args.controllers.split(',')
@@ -308,7 +318,7 @@ if __name__ == '__main__':
             seg_vlan = int(vlan)
             RestLib.program_segment_and_membership_rule(
                 active_server, cookie, args.management_tenant,
-                segment_name, internal_port, seg_vlan)
+                segment_name, internal_port, seg_vlan, args.bcf_version)
 
         sys.exit(0)
     except Exception as e:
