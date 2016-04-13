@@ -56,28 +56,28 @@ class bcf::p_v::compute {
 
     # Install rootwrap filter
     file { '/etc/neutron/rootwrap.d/network.filters':
-      ensure  => 'file',
-      source  => 'puppet:///modules/bcf/rootwrap/network.filters',
+      ensure => 'file',
+      source => 'puppet:///modules/bcf/rootwrap/network.filters',
     }
     file { '/etc/neutron/rootwrap.d/api-metadata.filters':
-      ensure  => 'file',
-      source  => 'puppet:///modules/bcf/rootwrap/api-metadata.filters',
+      ensure => 'file',
+      source => 'puppet:///modules/bcf/rootwrap/api-metadata.filters',
     }
     file { '/etc/neutron/rootwrap.d/baremetal-deploy-helper.filters':
-      ensure  => 'file',
-      source  => 'puppet:///modules/bcf/rootwrap/baremetal-deploy-helper.filters',
+      ensure => 'file',
+      source => 'puppet:///modules/bcf/rootwrap/baremetal-deploy-helper.filters',
     }
     file { '/etc/neutron/rootwrap.d/baremetal-compute-ipmi.filters':
-      ensure  => 'file',
-      source  => 'puppet:///modules/bcf/rootwrap/baremetal-compute-ipmi.filters',
+      ensure => 'file',
+      source => 'puppet:///modules/bcf/rootwrap/baremetal-compute-ipmi.filters',
     }
     file { '/etc/neutron/rootwrap.d/compute.filters':
-      ensure  => 'file',
-      source  => 'puppet:///modules/bcf/rootwrap/compute.filters',
+      ensure => 'file',
+      source => 'puppet:///modules/bcf/rootwrap/compute.filters',
     }
 
     package { 'python-pip':
-      ensure => 'installed',
+      ensure  => 'installed',
       require => File['/etc/neutron/rootwrap.d/network.filters']
     }
     exec { 'bsnstacklib':
@@ -88,7 +88,7 @@ class bcf::p_v::compute {
 
     # Install the cleanup script
     file { '/etc/bigswitch':
-      ensure => 'directory',
+      ensure  => 'directory',
       require => Exec['bsnstacklib']
     }
     file { '/etc/bigswitch/bridge-cleanup.sh':
@@ -102,28 +102,40 @@ class bcf::p_v::compute {
       logoutput => true,
       require   => File['/etc/bigswitch/bridge-cleanup.sh']
     }
-    file { '/etc/bigswitch/ivs-setup.sh':
+    file { '/etc/bigswitch/ivs-install.sh':
       ensure  => 'file',
-      source  => 'puppet:///modules/bcf/p_v/ivs-setup.sh',
+      source  => 'puppet:///modules/bcf/p_v/ivs-install.sh',
       require => EXEC['clean up ovs bridges']
     }
-    exec { 'set up ivs':
-      command   => "bash /etc/bigswitch/ivs-setup.sh ${bcf::mgmt_itf} ${mgmt_ip} ${bcf::itfs} ${interfaces} \'${bridge_ips}\' ${bcf::deployment_id} ${bcf::params::openstack::bcf_version}",
+    exec { 'install ivs package':
+      command   => "bash /etc/bigswitch/ivs-install.sh ${bcf::params::openstack::bcf_version}",
       path      => '/sbin:/usr/sbin/:/usr/local/bin/:/usr/bin/:/bin',
       logoutput => true,
-      require   => File['/etc/bigswitch/ivs-setup.sh']
+      require   => File['/etc/bigswitch/ivs-install.sh']
     }
     file { '/etc/default/ivs':
       ensure  => file,
       mode    => '0644',
       content => "DAEMON_ARGS=\"--hitless --inband-vlan 4092 -u ${ivs_uplink_str} --internal-port=${internal_port_str}\"",
-      require => Exec['set up ivs'],
+      require => Exec['install ivs package'],
       notify  => Service['ivs'],
     }
 
     service { 'ivs':
         ensure => running,
         enable => true,
+    }
+
+    file { '/etc/bigswitch/ivs-setup.sh':
+      ensure  => 'file',
+      source  => 'puppet:///modules/bcf/p_v/ivs-setup.sh',
+      require => Service['ivs']
+    }
+    exec { 'set up ivs':
+      command   => "bash /etc/bigswitch/ivs-setup.sh ${bcf::mgmt_itf} ${mgmt_ip} ${bcf::itfs} ${interfaces} \'${bridge_ips}\' ${bcf::deployment_id}",
+      path      => '/sbin:/usr/sbin/:/usr/local/bin/:/usr/bin/:/bin',
+      logoutput => true,
+      require   => File['/etc/bigswitch/ivs-setup.sh']
     }
 
     # edit rc.local for cron job and default gw

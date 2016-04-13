@@ -1,8 +1,8 @@
 #!/bin/bash
 set -x
 
-if [ "$#" -ne 7 ]; then
-  echo "Usage: $0 <management interface> <management ip> <uplinks> <all used interfaces> <bridges' ip> <fuel_deployment_id> <bcf_version>" >&2
+if [ "$#" -ne 6 ]; then
+  echo "Usage: $0 <management interface> <management ip> <uplinks> <all used interfaces> <bridges' ip> <fuel_deployment_id>" >&2
   exit 1
 fi
 
@@ -16,7 +16,6 @@ declare -a interfaces=($4)
 IFS='{}'
 read -ra array1 <<< $5
 deployment_id=$6
-bcf_version=$7
 
 cdr2mask ()
 {
@@ -25,18 +24,6 @@ cdr2mask ()
    [ $1 -gt 1 ] && shift $1 || shift
    echo ${1-0}.${2-0}.${3-0}.${4-0}
 }
-
-# install ivs
-apt-get install -y libnl-genl-3-200
-apt-get -f install -y
-dpkg --force-all -i "/etc/fuel/plugins/fuel-plugin-bigswitch-1.0/ivs_packages/ubuntu/ivs_${bcf_version}_amd64.deb"
-dpkg --force-all -i "/etc/fuel/plugins/fuel-plugin-bigswitch-1.0/ivs_packages/ubuntu/ivs-dbg_${bcf_version}_amd64.deb"
-apt-get install -y apport
-
-# full installation
-if [[ -f /etc/init/neutron-plugin-openvswitch-agent.override ]]; then
-    cp /etc/init/neutron-plugin-openvswitch-agent.override /etc/init/neutron-bsn-agent.override
-fi
 
 echo '' > /etc/network/interfaces
 
@@ -65,6 +52,8 @@ for (( i=0; i<$len; i++ )); do
         internal_interface="mgm${deployment_id}"
     elif [[ "$key" =~ "br-ex" ]]; then
         internal_interface="ex${deployment_id}"
+    else
+        continue
     fi
 
     if [[ "$internal_interface" =~ "$deployment_id" ]]; then
@@ -80,7 +69,6 @@ for (( i=0; i<$len; i++ )); do
             ifconfig $internal_interface netmask ${netmask}
         fi
         echo -e '\n' >> /etc/network/interfaces
-
     fi
 done
 
@@ -114,8 +102,6 @@ echo 'Restart openstack-nova-compute and neutron-bsn-agent'
 service nova-compute restart
 service neutron-bsn-agent restart
 
-set +e
-
 # Make sure only root can run this script
 if [[ "$(id -u)" != "0" ]]; then
    echo -e "Please run as root"
@@ -137,4 +123,3 @@ puppet module install --force puppetlabs-inifile
 puppet module install --force puppetlabs-stdlib
 
 exit 0
-
