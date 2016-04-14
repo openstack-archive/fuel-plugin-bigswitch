@@ -277,9 +277,14 @@ class bcf::p_v::reconfigure_neutron {
       enable => true,
     }
 
+    file { '/etc/bigswitch':
+      ensure  => 'directory',
+      require => Exec['bsnstacklib'],
+    }
     file { '/etc/bigswitch/bcf_rest_client.py':
       ensure  => 'file',
       source  => 'puppet:///modules/bcf/p_v/bcf_rest_client.py',
+      require => File['/etc/bigswitch'],
     }
     exec { 'Openstack segment membership':
       command => "python /etc/bigswitch/bcf_rest_client.py -u ${bcf::params::openstack::bcf_username} -p ${bcf::params::openstack::bcf_password} -c ${rest_server} -m ${bcf::params::openstack::bcf_os_mgmt_tenant} -f ${bcf::deployment_id} -b ${bcf::params::openstack::bcf_version}",
