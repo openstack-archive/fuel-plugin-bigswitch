@@ -3,7 +3,7 @@
 
 - id: lacp-bond
   type: puppet
-  groups: [primary-controller, controller, ceph-osd]
+  groups: [primary-controller, controller, ceph-osd, cinder]
   required_for: [openstack-controller, connectivity_tests]
   requires: [netconfig]
   parameters:
