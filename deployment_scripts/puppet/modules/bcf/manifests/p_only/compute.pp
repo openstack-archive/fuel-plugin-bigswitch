@@ -141,11 +141,6 @@ class bcf::p_only::compute {
       subscribe  => [File['/etc/init/neutron-plugin-openvswitch-agent.conf']],
     }
 
-    file { '/etc/neutron/dnsmasq-neutron.conf':
-      ensure  => file,
-      content => 'dhcp-option-force=26,1400',
-    }
-
     service { 'nova-compute':
       ensure => running,
       enable => true,

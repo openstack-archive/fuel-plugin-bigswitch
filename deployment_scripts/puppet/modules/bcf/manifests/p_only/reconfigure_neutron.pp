@@ -111,10 +111,6 @@ class bcf::p_only::reconfigure_neutron {
       value             => 'True',
       notify            => Service['neutron-server'],
     }
-    file { '/etc/neutron/dnsmasq-neutron.conf':
-      ensure  => file,
-      content => 'dhcp-option-force=26,1400',
-    }
 
     # config /etc/neutron/l3-agent.ini
     ini_setting { 'l3 agent disable metadata proxy':

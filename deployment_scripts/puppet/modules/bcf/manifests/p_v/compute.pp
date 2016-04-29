@@ -290,10 +290,6 @@ end script
       setting           => 'enable_metadata_proxy',
       value             => 'False',
     }
-    file { '/etc/neutron/dnsmasq-neutron.conf':
-      ensure  => file,
-      content => 'dhcp-option-force=26,1400',
-    }
 
     service { 'nova-compute':
       ensure => running,
