@@ -247,10 +247,10 @@ class RestLib(object):
 
         pg_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
                        '''segment[name="%(segment)s"]/'''
-                       '''port-group-membership-rule''' %
+                       '''interface-group-membership-rule''' %
                        {'tenant': tenant,
                         'segment': segment})
-        rule_data = {"port-group": ANY, "vlan": vlan}
+        rule_data = {"interface-group": ANY, "vlan": vlan}
         if "3.6" in bcf_version:
             pg_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
                            '''segment[name="%(segment)s"]/'''

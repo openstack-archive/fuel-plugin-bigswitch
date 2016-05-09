@@ -95,31 +95,8 @@ for (( i=0; i<$len; i++ )); do
     ip link set ${uplinks[$i]} up
 done
 
-# assign ip to ivs internal ports
-#bash /etc/rc.local
-
 echo 'Restart openstack-nova-compute and neutron-bsn-agent'
 service nova-compute restart
 service neutron-bsn-agent restart
-
-# Make sure only root can run this script
-if [[ "$(id -u)" != "0" ]]; then
-   echo -e "Please run as root"
-   exit 1
-fi
-
-apt-get install ubuntu-cloud-keyring
-apt-get update -y
-apt-get install -y linux-headers-$(uname -r) build-essential
-apt-get install -y python-dev python-setuptools
-apt-get install -y puppet dpkg
-apt-get install -y vlan ethtool
-apt-get install -y libssl-dev libffi6 libffi-dev
-apt-get install -y libnl-genl-3-200
-apt-get -f install -y
-apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y neutron-common
-easy_install pip
-puppet module install --force puppetlabs-inifile
-puppet module install --force puppetlabs-stdlib
 
 exit 0

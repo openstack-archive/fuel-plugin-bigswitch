@@ -1,6 +1,11 @@
 #!/bin/bash
 set -x
 
+if [[ "$(id -u)" != "0" ]]; then
+   echo -e "Please run as root"
+   exit 1
+fi
+
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 <bcf_version>" >&2
   exit 1
@@ -18,11 +23,6 @@ apt-get install -y apport
 # full installation
 if [[ -f /etc/init/neutron-plugin-openvswitch-agent.override ]]; then
     cp /etc/init/neutron-plugin-openvswitch-agent.override /etc/init/neutron-bsn-agent.override
-fi
-
-if [[ "$(id -u)" != "0" ]]; then
-   echo -e "Please run as root"
-   exit 1
 fi
 
 exit 0
